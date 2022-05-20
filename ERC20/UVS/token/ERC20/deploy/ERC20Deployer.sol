@@ -43,7 +43,7 @@ contract ERC20Deployer is Context, AccessControl,ERC20Capped, ERC20Burnable, ERC
         firstMint(admin,firstValue);
     }
 
-    function firstMint(address admin,uint256 firstValue) internal {
+    function firstMint(address admin,uint256 firstValue) private {
         _mint(admin,firstValue);
     }
 
