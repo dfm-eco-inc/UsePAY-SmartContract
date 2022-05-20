@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GNU LGPLv3
 pragma solidity >= 0.7.0;
 pragma experimental ABIEncoderV2;
 import "./Pack.sol";
@@ -13,7 +13,7 @@ contract TicketPack is Ticket{
     
     receive () external payable {}
     fallback() external payable {
-        (, bytes memory result0 ) = address(iAddresses).staticcall(abi.encodeWithSignature("viewAddress(uint16)",1000));
+        (, bytes memory result0 ) = address(iAddresses).staticcall(abi.encodeWithSignature("viewAddress(uint16)",10000));
         (address tikcet_commander) = abi.decode(result0,(address));
         //get Data 
         assembly {

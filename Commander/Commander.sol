@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GNU LGPLv3
 pragma solidity >= 0.7.0;
 pragma experimental ABIEncoderV2;
 
@@ -28,7 +28,7 @@ contract Commander is WrapAddresses {
         uint256 amountOutMinimum;
     }
     
-    function _transfer(uint8 tokenType, address _to , uint256 value ) internal {
+    function _transfer(uint16 tokenType, address _to , uint256 value ) internal {
         if ( tokenType == 100 ) {
             payable(_to).transfer(value);
         } else { 
@@ -39,23 +39,34 @@ contract Commander is WrapAddresses {
         }
     }
     
+    function _getBalance(uint16 tokenType) internal view returns (uint256) {
+        uint balance = 0;
+        if ( tokenType ==  100  ) {
+            balance = address(this).balance;
+        } else {
+            (,bytes memory tokenResult) = address(iAddresses).staticcall(abi.encodeWithSignature("viewAddress(uint16)",uint16(tokenType)));
+            (,bytes memory result) = address(abi.decode(tokenResult,(address))).staticcall(abi.encodeWithSignature("balanceOf(address)",address(this)));
+            balance = abi.decode(result,(uint256));
+        }   
+        return balance;
+    }
     
-    function _swap( address _to, uint256 amountIn,address _fromToken, address _toToken ) internal returns (uint256) {
+    function _swap( address _to, uint256 amountIn ) internal returns (uint256) {
         (,bytes memory result0 ) = address(iAddresses).staticcall(abi.encodeWithSignature("viewAddress(uint16)",1200));
         (address routerAddr) = abi.decode(result0,(address));
-        if ( _fromToken == address(0) ) {
-            (bool success, bytes memory result) = address( routerAddr ).call{ value: amountIn }(abi.encodeWithSignature("exactInputSingle((address,address,uint24,address,uint256,uint256,uint256,uint160))",getExactInputSigleParams( _to, amountIn, _toToken) ) );
-            require( success , "swap ETH->TOKEN fail" );
+        (,bytes memory resultDFM ) = address(iAddresses).staticcall(abi.encodeWithSignature("viewAddress(uint16)",101));
+        (bool success, bytes memory result) = address( routerAddr ).call{ value: amountIn }(abi.encodeWithSignature("exactInputSingle((address,address,uint24,address,uint256,uint256,uint256,uint160))",getExactInputSigleParams( _to, amountIn, abi.decode(resultDFM,(address))) ) );
+        require( success , "swap ETH->TOKEN fail" );
             (uint256 amountOut) = abi.decode(result,(uint256));
             return amountOut;
-        } else {
-             ( bool success1,) = address( _fromToken ).call( abi.encodeWithSignature( "approve(address,uint256)", routerAddr, amountIn ) );
-             require( success1 , "tokenApprove Fail" );
-             ( bool success2, bytes memory result ) = address( routerAddr ).call( abi.encodeWithSignature( "exactInput((bytes,address,uint256,uint256,uint256))", getExactInputParams( _to, amountIn, _fromToken, _toToken ) ) );
-             require( success2 , "swap TOKEN->TOKEN Fail" );
-             (uint256 amountOut) = abi.decode(result,(uint256));
-            return amountOut;
-        }
+
+            //  ( bool success1,) = address( _fromToken ).call( abi.encodeWithSignature( "approve(address,uint256)", routerAddr, amountIn ) );
+            //  require( success1 , "tokenApprove Fail" );
+            //  ( bool success2, bytes memory result ) = address( routerAddr ).call( abi.encodeWithSignature( "exactInput((bytes,address,uint256,uint256,uint256))", getExactInputParams( _to, amountIn, _fromToken, _toToken ) ) );
+            //  require( success2 , "swap TOKEN->TOKEN Fail" );
+            //  (uint256 amountOut) = abi.decode(result,(uint256));
+            // return amountOut;
+        
     }
     
     

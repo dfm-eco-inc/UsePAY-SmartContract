@@ -1,20 +1,49 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GNU LGPLv3
 pragma solidity >= 0.7.0;
 pragma experimental ABIEncoderV2;
 
 import "../../Pack/TicketPack.sol";
-import "../../Pack/Pack.sol";
 import "../../Commander/BSC/BSC_Commander.sol";
 
 contract BSC_TicketCreator is Ticket,Commander {
-    event createTicketEvent( address indexed pack, uint256 createTime, PackInfo packInfo );  // 0: pack indexed, 1 : craeteTime , 2 : packInfo
-    function createTicket(  PackInfo calldata _packInfo   ) external payable 
+
+    uint8 private swapCount;
+    uint16[2] private tokenIdx = [550,101];
+    uint8 private nowSwap;
+    
+    event createTicketEvent( address indexed pack, uint256 createNum, PackInfo packInfo );  // 0: pack indexed, 1 : craeteTime , 2 : packInfo
+    event setSwapCountEvent( address indexed owner, uint8 beforeCnt, uint8 afterCnt);
+
+    function createTicket(  PackInfo calldata _packInfo , uint256 _createNum   ) external payable 
     {
-        ( ,bytes memory result0 ) = address(iAddresses).staticcall(abi.encodeWithSignature("viewAddress(uint16)",101));
-        (address DFM) = abi.decode(result0,(address));
-        _swap(msg.sender,msg.value,address(0),DFM);
+        require(_packInfo.total <= 1000 ,"C05");
+        uint8 i = 0;
+        if(swapCount>0) {
+            nowSwap++;
+            if(swapCount == nowSwap) {
+                nowSwap = 0;
+                i = 1;
+            }
+        }
+        _swap(tokenIdx[i],msg.sender,msg.value);
         
         TicketPack pers = new TicketPack( _packInfo, msg.sender );
-        emit createTicketEvent(address( pers ), block.timestamp , _packInfo);
+        emit createTicketEvent(address( pers ), _createNum , _packInfo);
     }
+
+    function setSwapCount(uint8 _swapCount) external payable onlyManager(msg.sender) {
+        emit setSwapCountEvent(msg.sender,swapCount,_swapCount);
+        swapCount = _swapCount;        
+    }
+
+    function setTokenIdx(uint16[2] memory _tokenIdx) external payable onlyManager(msg.sender) {
+        tokenIdx = _tokenIdx;
+    }
+
+    function viewSwapCount() external view returns(uint8) { return swapCount; }
+
+    function viewTokenIdx() external view returns(uint16[2] memory) { return tokenIdx;} 
+    
+
+    function viewVersion() external view returns (uint8) { return ver; }
 }

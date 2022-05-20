@@ -1,13 +1,12 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GNU LGPLv3
 pragma solidity >= 0.7.0;
 pragma experimental ABIEncoderV2;
 
 import "../Pack/CouponPack.sol";
-import "../Pack/Pack.sol";
 import "./Commander.sol";
 contract CouponCommander is Commander,Coupon {
-    
-    event buyEvent(address indexed pack, address buyer,uint256 count); // 0: pack indexed, 1: buyer, 2: count 
+     
+    event buyEvent(address indexed pack, uint256 buyNum, address buyer,uint256 count); // 0: pack indexed, 1: buyer, 2: count 
     event useEvent(address indexed pack, address user,uint256 count); // 0: pack indexed, 1: buyer, 2: count 
     event requestRefundEvent(address indexed pack, address buyer ,uint256 count); // 0: pack indexed, 1: buyer, 2: count
     event calculateRefundEvent(address indexed pack, address[] buyers ) ;
@@ -20,63 +19,61 @@ contract CouponCommander is Commander,Coupon {
     
     
     modifier onlyOwner() { require ( msg.sender == owner, "O01" ); _; }
-    modifier canUse(uint256 count) { 
-        require ( buyList[msg.sender].hasCount - buyList[msg.sender].useCount >= count, "U02" );
-        _; 
-    }
-    modifier canBuy(uint256 count) { 
-        require (count<=packInfo.maxCount,"");
-        require ( block.timestamp >= packInfo.times0 && block.timestamp <= packInfo.times1, "B01" ); 
-        require ( quantity - count >= 0 , "B04"); 
-        _; 
-    }
+    // modifier canUse(uint256 count) { 
+    //     require ( buyList[msg.sender].hasCount - buyList[msg.sender].useCount >= count, "U02" );
+    //     _; 
+    // }
+    // modifier canBuy(uint256 count) { 
+    //     require (count<=packInfo.maxCount,"");
+    //     require ( block.timestamp >= packInfo.times0 && block.timestamp <= packInfo.times1, "B01" ); 
+    //     require ( quantity - count >= 0 , "B04"); 
+    //     _; 
+    // }
 
 
-    function _buy(uint32 count, address buyer) private {
-        buyList[buyer].hasCount = buyList[buyer].hasCount+( count );
-        quantity = quantity - count ;
-    }
+    // function _buy(uint32 count, address buyer) private {
+    //     buyList[buyer].hasCount = buyList[buyer].hasCount+( count );
+    //     quantity = quantity - count ;
+    // }
     
     
-    //-----------------------------------------
-    //  payableFunctions
-    //-----------------------------------------
+    // //-----------------------------------------
+    // //  payableFunctions
+    // //-----------------------------------------
     
-    function buy( uint32 count ) external payable canBuy(count) {
-        _buy(count, msg.sender);
-        emit buyEvent(  address( this ),msg.sender, count );
-    }
+    // function buy( uint32 count , uint256 buyNum ) external payable canBuy(count) {
+    //     _buy(count, msg.sender);
+    //     emit buyEvent(  address( this ), buyNum, msg.sender, count );
+    // }
     
-    function give(address[] memory toAddr) external payable canUse( toAddr.length ) {
-        require(block.timestamp<packInfo.times3,"");
-        buyList[msg.sender].hasCount = buyList[msg.sender].hasCount- uint32(toAddr.length);
-        for(uint i=0; i<toAddr.length; i++) {
-            buyList[toAddr[i]].hasCount++;
-        }
-        emit giveEvent( address(this), msg.sender, toAddr );
-    }
+    // function give(address[] memory toAddr) external payable canUse( toAddr.length ) {
+    //     require(block.timestamp<packInfo.times3,"");
+    //     buyList[msg.sender].hasCount = buyList[msg.sender].hasCount- uint32(toAddr.length);
+    //     for(uint i=0; i<toAddr.length; i++) {
+    //         buyList[toAddr[i]].hasCount++;
+    //     }
+    //     emit giveEvent( address(this), msg.sender, toAddr );
+    // }
     
-    function gift( address[] memory toAddr ) external payable canBuy(toAddr.length) {
-        for ( uint i =0; i<toAddr.length; i++) {
-            buyList[toAddr[i]].hasCount++;
-        }
-        quantity = quantity - toAddr.length ;
-        emit giftEvent( address(this), msg.sender, toAddr);
-    }
+    // function gift( address[] memory toAddr ) external payable canBuy(toAddr.length) {
+    //     for ( uint i =0; i<toAddr.length; i++) {
+    //         buyList[toAddr[i]].hasCount++;
+    //     }
+    //     quantity = quantity - toAddr.length ;
+    //     emit giftEvent( address(this), msg.sender, toAddr);
+    // }
     
-    function use( uint32 _count ) external payable canUse( _count ) {
-        require ( block.timestamp > packInfo.times2 && block.timestamp < packInfo.times1, "U01" );
-        buyList[msg.sender].useCount = buyList[msg.sender].useCount+(_count);
-        emit useEvent( address( this ), msg.sender, _count );
-    }
+    // function use( uint32 _count ) external payable canUse( _count ) {
+    //     require ( block.timestamp > packInfo.times2 && block.timestamp < packInfo.times1, "U01" );
+    //     buyList[msg.sender].useCount = buyList[msg.sender].useCount+(_count);
+    //     emit useEvent( address( this ), msg.sender, _count );
+    // }
     
     function changeTotal(uint32 _count) external payable onlyOwner {
         require(packInfo.total - quantity <= _count,"count too high");
         if ( _count > packInfo.total ) {
             checkFee(_count-packInfo.total);    
-            ( ,bytes memory result0 ) = address(iAddresses).staticcall(abi.encodeWithSignature("viewAddress(uint16)",101));
-            (address DFM) = abi.decode(result0,(address));
-            _swap(msg.sender,msg.value,address(0),DFM);
+            _swap(msg.sender,msg.value);
             quantity = quantity + ( _count - packInfo.total );
         }else {
             quantity = quantity - ( packInfo.total - _count );
@@ -93,7 +90,9 @@ contract CouponCommander is Commander,Coupon {
     
     function viewUser(address _addr) external view returns (pack memory) { return buyList[_addr]; }
     
-    function viewQuantity() external view returns (uint256) { return quantity; }
+    // function viewQuantity() external view returns (uint256) { return quantity; }
     
     function viewOwner() external view returns (address) { return owner; }
+
+    function viewVersion() external view returns (uint8) { return ver; }
 }
