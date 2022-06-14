@@ -26,11 +26,11 @@ contract Addresses {
         addresses[0] = msg.sender;
     }
     
-    function setAddress(uint16 _index,address _addr) external payable onlyManager {
+    function setAddress(uint16 _index,address _addr) external onlyManager {
         addresses[_index] = _addr;
     }
 
-    function setAddresses(uint16[] memory _index, address[] memory _addr) external payable onlyManager {
+    function setAddresses(uint16[] memory _index, address[] memory _addr) external onlyManager {
         require(_index.length == _addr.length,"not same _index,_addr length");
         for ( uint16 i =0; i<_index.length; i++) {
             addresses[_index[i]] = _addr[i];
