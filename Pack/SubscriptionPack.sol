@@ -13,8 +13,6 @@ contract SubscriptionPack is Subscription {
         owner = _owner;
     }
 
-    
-    receive () external payable {}
     fallback() external payable {
         (,bytes memory result0) = address(iAddresses).staticcall(abi.encodeWithSignature("viewAddress(uint16)",10002));
         address subscription_commander = abi.decode(result0,(address));

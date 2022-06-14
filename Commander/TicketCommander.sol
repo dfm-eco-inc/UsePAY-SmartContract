@@ -27,6 +27,7 @@ contract TicketCommander is Ticket,Commander {
         require ( buyList[msg.sender].hasCount - buyList[msg.sender].useCount >= count, "U02" );
         _; 
     }
+
     modifier canBuy(uint256 count) { 
 
         require ( block.timestamp >= packInfo.times0 && block.timestamp <= packInfo.times1, "B01" ); 
@@ -122,9 +123,13 @@ contract TicketCommander is Ticket,Commander {
         emit useEvent( address( this ), msg.sender, _count );
     }
     
-    function requestRefund( uint32 _count ) external payable canUse(_count) {
+    function requestRefund( uint32 _count ) external payable canUse(_count) blockReEntry {
         uint256 refundValue = 0;
         uint256 swapValue = 0;
+        buyList[msg.sender].hasCount = buyList[msg.sender].hasCount - _count;
+        if (block.timestamp < packInfo.times1) {
+            quantity = quantity + _count;
+        }
         if ( block.timestamp < packInfo.times3 ) { // in useTime
             ( refundValue,swapValue ) = _refund(msg.sender,packInfo.price * _count,0);
             totalUsedCount = totalUsedCount + _count;
@@ -132,10 +137,6 @@ contract TicketCommander is Ticket,Commander {
             uint totalValue = packInfo.price * _count;
             uint value = _percentValue(totalValue,100-packInfo.noshowValue);
             ( refundValue, swapValue ) = _refund(msg.sender,value,5);
-        }
-        buyList[msg.sender].hasCount = buyList[msg.sender].hasCount - _count;
-        if (block.timestamp < packInfo.times1) {
-            quantity = quantity + _count;
         }
         emit requestRefundEvent(address(this),msg.sender,_count,refundValue,swapValue);
     }

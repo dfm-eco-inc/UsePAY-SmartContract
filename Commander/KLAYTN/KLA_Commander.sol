@@ -9,6 +9,13 @@ contract KLA_Commander is WrapAddresses {
     event giftEvent(address indexed pack,address fromAddr ,address[] toAddr); // 0: pack indexed, 1: from, 2: to, 3: count
     event giveEvent(address indexed pack,address fromAddr ,address[] toAddr); // 0: pack indexed, 1: from, 2: to, 3: count
     
+    bool reEntry = false;
+    modifier blockReEntry() {
+        require(!reEntry);
+        reEntry = true;
+        _;
+        reEntry = false;
+    }
     
     function _transfer(uint16 tokenType, address _to , uint256 value ) internal {
         if ( tokenType == 100 ) {

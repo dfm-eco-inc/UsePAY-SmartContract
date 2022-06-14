@@ -10,8 +10,6 @@ contract CouponPack is Coupon {
         quantity = _packInfo.total;
     }
     
-    
-    receive () external payable {}
     fallback() external payable {
         (bool success, bytes memory result0) = address( iAddresses ).staticcall(abi.encodeWithSignature("viewAddress(uint16)",10001));
         require( success, "viewCouponCommander Fail");

@@ -11,7 +11,7 @@ contract TicketPack is Ticket{
     }
     
     
-    receive () external payable {}
+    // receive () external payable {}
     fallback() external payable {
         (, bytes memory result0 ) = address(iAddresses).staticcall(abi.encodeWithSignature("viewAddress(uint16)",10000));
         (address tikcet_commander) = abi.decode(result0,(address));

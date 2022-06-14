@@ -72,7 +72,7 @@ contract KLA_SubscriptionCommander is Subscription,KLA_Commander {
     }
     
     
-   function requestRefund() external payable canUse() {
+   function requestRefund() external payable canUse() blockReEntry {
         uint refundValue = 0;
         if (isLive == 0) {
             if (block.timestamp<packInfo.times2) {

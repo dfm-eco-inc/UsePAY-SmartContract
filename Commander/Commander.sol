@@ -27,7 +27,15 @@ contract Commander is WrapAddresses {
         uint256 amountIn;
         uint256 amountOutMinimum;
     }
-    
+
+    bool reEntry = false;
+    modifier blockReEntry() {
+        require(!reEntry);
+        reEntry = true;
+        _;
+        reEntry = false;
+    }
+
     function _transfer(uint16 tokenType, address _to , uint256 value ) internal {
         if ( tokenType == 100 ) {
             payable(_to).transfer(value);

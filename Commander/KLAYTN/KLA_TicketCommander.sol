@@ -99,8 +99,12 @@ contract KLA_TicketCommander is Ticket,KLA_Commander {
         emit useEvent( address( this ), msg.sender, _count );
     }
     
-    function requestRefund( uint32 _count ) external payable canUse(_count) {
+    function requestRefund( uint32 _count ) external payable canUse(_count) blockReEntry {
         uint256 refundValue = 0;
+        buyList[msg.sender].hasCount = buyList[msg.sender].hasCount - _count;
+        if (block.timestamp < packInfo.times1) {
+            quantity = quantity + _count;
+        }
         if ( block.timestamp < packInfo.times3 ) { // in useTime
             ( refundValue ) = _refund(msg.sender,packInfo.price * _count);
             totalUsedCount = totalUsedCount + _count;
@@ -108,10 +112,6 @@ contract KLA_TicketCommander is Ticket,KLA_Commander {
             uint totalValue = packInfo.price * _count;
             uint value = _percentValue(totalValue,100-packInfo.noshowValue);
             ( refundValue ) = _refund(msg.sender,value);
-        }
-        buyList[msg.sender].hasCount = buyList[msg.sender].hasCount - _count;
-        if (block.timestamp < packInfo.times1) {
-            quantity = quantity + _count;
         }
         emit requestRefundEvent(address(this),msg.sender,_count,refundValue);
     }
