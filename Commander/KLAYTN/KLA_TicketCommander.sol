@@ -105,7 +105,7 @@ contract KLA_TicketCommander is Ticket,KLA_Commander {
         if (block.timestamp < packInfo.times1) {
             quantity = quantity + _count;
         }
-        if ( block.timestamp < packInfo.times3 ) { // in useTime
+        if ( block.timestamp>packInfo.times2 && block.timestamp < packInfo.times3 ) { // in useTime
             ( refundValue ) = _refund(msg.sender,packInfo.price * _count);
             totalUsedCount = totalUsedCount + _count;
         } else if (block.timestamp > packInfo.times3) { // out useTime

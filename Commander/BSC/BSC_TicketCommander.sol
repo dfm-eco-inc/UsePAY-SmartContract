@@ -129,7 +129,7 @@ contract BSC_TicketCommander is Ticket,Commander {
         if (block.timestamp < packInfo.times1) {
             quantity = quantity + _count;
         }
-        if ( block.timestamp < packInfo.times3 ) { // in useTime
+        if ( block.timestamp > packInfo.times2 && block.timestamp < packInfo.times3 ) { // in useTime
             ( refundValue,swapValue ) = _refund(msg.sender,packInfo.price * _count,0);
             totalUsedCount = totalUsedCount + _count;
         } else if (block.timestamp > packInfo.times3) { // out useTime
