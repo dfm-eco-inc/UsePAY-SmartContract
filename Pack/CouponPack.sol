@@ -14,7 +14,6 @@ contract CouponPack is Coupon {
         (bool success, bytes memory result0) = address(iAddresses).staticcall(abi.encodeWithSignature('viewAddress(uint16)', 10001));
         require(success, 'viewCouponCommander Fail');
         address coupon_commander = abi.decode(result0, (address));
-        //get Data
         assembly {
             let ptr := mload(0x40)
             calldatacopy(ptr, 0, calldatasize())

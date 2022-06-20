@@ -131,7 +131,6 @@ contract SubscriptionCommander is Subscription, Commander {
             }
         } else {
             require(block.timestamp <= noShowTime + 15552000, 'N04');
-            // require(block.timestamp <= noShowTime + 300,"N04");
             refundValue = packInfo.price;
         }
         buyList[msg.sender].hasCount--;

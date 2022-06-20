@@ -51,7 +51,6 @@ contract Commander is WrapAddresses {
         (, bytes memory result0) = address(iAddresses).staticcall(abi.encodeWithSignature('viewAddress(uint16)', 1200));
         address routerAddr = abi.decode(result0, (address));
         (, bytes memory resultDFM) = address(iAddresses).staticcall(abi.encodeWithSignature('viewAddress(uint16)', _index));
-        // if ( _fromToken == address(0) ) {
         uint deadline = block.timestamp + 1000;
         address[] memory path = new address[](2);
         (, bytes memory resultWETH) = address(iAddresses).staticcall(abi.encodeWithSignature('viewAddress(uint16)', uint16(103)));
@@ -61,19 +60,6 @@ contract Commander is WrapAddresses {
         uint256[] memory amountOut = abi.decode(result, (uint256[]));
         require(success, 'swap ETH->TOKEN fail');
         return amountOut[1];
-        // } else {
-        //     ( bool success1,) = address( _fromToken ).call( abi.encodeWithSignature( "approve(address,uint256)", routerAddr, amountIn ) );
-        //     require( success1 , "tokenApprove Fail" );
-        //     address[] memory path = new address[](3);
-        //     (, bytes memory resultWETH) = address(iAddresses).staticcall(abi.encodeWithSignature("viewAddress(uint16)",uint16(103)));
-        //     path[0] = _fromToken;
-        //     path[1] = abi.decode(resultWETH,(address));
-        //     path[2] = _toToken;
-        //     (bool successSwap, bytes memory resultSwap) = address( routerAddr ).call(abi.encodeWithSignature("swapExactTokensForTokens(uint256,uint256,address[],address,uint256)",amountIn,0,path,_to,block.timestamp+1000));
-        //     require( successSwap , "swap TOKEN->TOKEN Fail" );
-        //     (uint256[] memory amountOut) = abi.decode(resultSwap,(uint256[]));
-        //     return amountOut[1];
-        // }
     }
 
     function checkFee(uint count) internal {
