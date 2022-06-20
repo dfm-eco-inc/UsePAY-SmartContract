@@ -1,0 +1,12 @@
+{
+  "name": "UsePAY-SmartContract",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/dfm-eco-inc/UsePAY-SmartContract.git",
+  "author": "DFM eco Inc. <usepay@mail.dfmeco.io> (https://dfmeco.io)",
+  "license": "SEE LICENSE IN LICENSE.md",
+  "devDependencies": {
+    "prettier": "^2.7.1",
+    "prettier-plugin-solidity": "^1.0.0-beta.19"
+  }
+}
