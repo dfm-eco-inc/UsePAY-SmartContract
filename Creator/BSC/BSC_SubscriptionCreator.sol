@@ -9,6 +9,7 @@ contract BSC_SubscriptionCreator is Subscription, Commander {
     uint8 private swapCount;
     uint16[2] private tokenIdx = [550, 101];
     uint8 private nowSwap;
+
     event createSubscriptionEvent(address indexed pack, uint256 createNum, PackInfo packInfo); // 0: pack indexed, 1 : craeteTime , 2 : packInfo
     event setSwapCountEvent(address indexed owner, uint8 beforeCnt, uint8 afterCnt);
 
