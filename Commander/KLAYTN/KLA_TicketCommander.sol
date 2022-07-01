@@ -17,7 +17,7 @@ contract KLA_TicketCommander is Ticket, KLA_Commander {
         _;
     }
 
-    modifier onCaculateTime() {
+    modifier onCalculateTime() {
         require(block.timestamp > packInfo.times3, 'CT01');
         _;
     }
@@ -64,7 +64,7 @@ contract KLA_TicketCommander is Ticket, KLA_Commander {
         emit buyEvent(address(this), buyNum, msg.sender, count);
     }
 
-    function give(address[] memory toAddr) external payable canUse(toAddr.length) {
+    function give(address[] memory toAddr) external canUse(toAddr.length) {
         buyList[msg.sender].hasCount = buyList[msg.sender].hasCount - uint32(toAddr.length);
         for (uint i = 0; i < toAddr.length; i++) {
             buyList[toAddr[i]].hasCount++;
@@ -72,7 +72,7 @@ contract KLA_TicketCommander is Ticket, KLA_Commander {
         emit giveEvent(address(this), msg.sender, toAddr);
     }
 
-    function use(uint32 _count) external payable canUse(_count) {
+    function use(uint32 _count) external canUse(_count) {
         require(block.timestamp > packInfo.times2, 'U01');
         totalUsedCount = totalUsedCount + _count;
         buyList[msg.sender].useCount = buyList[msg.sender].useCount + (_count);
@@ -80,7 +80,7 @@ contract KLA_TicketCommander is Ticket, KLA_Commander {
         emit useEvent(address(this), msg.sender, _count);
     }
 
-    function requestRefund(uint32 _count) external payable canUse(_count) blockReEntry {
+    function requestRefund(uint32 _count) external canUse(_count) blockReEntry {
         uint256 refundValue = 0;
         buyList[msg.sender].hasCount = buyList[msg.sender].hasCount - _count;
         if (block.timestamp < packInfo.times1) {
@@ -99,7 +99,7 @@ contract KLA_TicketCommander is Ticket, KLA_Commander {
         emit requestRefundEvent(address(this), msg.sender, _count, refundValue);
     }
 
-    function calculate() external payable onlyOwner onCaculateTime {
+    function calculate() external onlyOwner onCalculateTime {
         require(isCalculated == 0, 'CT03');
         uint quantityCount = packInfo.total - quantity - totalUsedCount;
         uint qunaityValue = _percentValue(packInfo.price, packInfo.noshowValue) * quantityCount;
@@ -109,7 +109,8 @@ contract KLA_TicketCommander is Ticket, KLA_Commander {
     }
 
     function changeTotal(uint32 _count) external payable onlyOwner {
-        require(packInfo.total - quantity <= _count, 'count too high');
+        require(packInfo.total - quantity <= _count, 'TC01');
+        require(_count <= 1000, 'C05');
         if (_count > packInfo.total) {
             checkFee(_count - packInfo.total);
             (, bytes memory result0) = address(iAddresses).staticcall(abi.encodeWithSignature('viewAddress(uint16)', 0));

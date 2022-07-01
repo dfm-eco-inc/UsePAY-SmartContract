@@ -16,7 +16,7 @@ contract TicketCommander is Ticket, Commander {
         require(msg.sender == owner, 'O01');
         _;
     }
-    modifier onCaculateTime() {
+    modifier onCalculateTime() {
         require(block.timestamp > packInfo.times3, 'CT01');
         _;
     }
@@ -90,7 +90,7 @@ contract TicketCommander is Ticket, Commander {
         emit buyEvent(address(this), buyNum, msg.sender, count);
     }
 
-    function give(address[] memory toAddr) external payable canUse(toAddr.length) {
+    function give(address[] memory toAddr) external canUse(toAddr.length) {
         buyList[msg.sender].hasCount = buyList[msg.sender].hasCount - uint32(toAddr.length);
         for (uint i = 0; i < toAddr.length; i++) {
             buyList[toAddr[i]].hasCount++;
@@ -98,7 +98,7 @@ contract TicketCommander is Ticket, Commander {
         emit giveEvent(address(this), msg.sender, toAddr);
     }
 
-    function use(uint32 _count) external payable canUse(_count) {
+    function use(uint32 _count) external canUse(_count) {
         require(block.timestamp > packInfo.times2, 'U01');
         totalUsedCount = totalUsedCount + _count;
         buyList[msg.sender].useCount = buyList[msg.sender].useCount + (_count);
@@ -106,7 +106,7 @@ contract TicketCommander is Ticket, Commander {
         emit useEvent(address(this), msg.sender, _count);
     }
 
-    function requestRefund(uint32 _count) external payable canUse(_count) blockReEntry {
+    function requestRefund(uint32 _count) external canUse(_count) blockReEntry {
         uint256 refundValue = 0;
         uint256 swapValue = 0;
         buyList[msg.sender].hasCount = buyList[msg.sender].hasCount - _count;
@@ -126,7 +126,7 @@ contract TicketCommander is Ticket, Commander {
         emit requestRefundEvent(address(this), msg.sender, _count, refundValue, swapValue);
     }
 
-    function calculate() external payable onlyOwner onCaculateTime {
+    function calculate() external onlyOwner onCalculateTime {
         require(isCalculated == 0, 'CT03');
         uint quantityCount = packInfo.total - quantity - totalUsedCount;
         uint qunaityValue = _percentValue(packInfo.price, packInfo.noshowValue) * quantityCount;
@@ -136,7 +136,8 @@ contract TicketCommander is Ticket, Commander {
     }
 
     function changeTotal(uint32 _count) external payable onlyOwner {
-        require(packInfo.total - quantity <= _count, 'count too high');
+        require(packInfo.total - quantity <= _count, 'TC01');
+        require(_count <= 1000, 'C05');
         if (_count > packInfo.total) {
             checkFee(_count - packInfo.total);
             _swap(msg.sender, msg.value);

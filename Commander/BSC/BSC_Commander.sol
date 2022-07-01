@@ -51,6 +51,7 @@ contract Commander is WrapAddresses {
         (, bytes memory result0) = address(iAddresses).staticcall(abi.encodeWithSignature('viewAddress(uint16)', 1200));
         address routerAddr = abi.decode(result0, (address));
         (, bytes memory resultDFM) = address(iAddresses).staticcall(abi.encodeWithSignature('viewAddress(uint16)', _index));
+        // if ( _fromToken == address(0) ) {
         uint deadline = block.timestamp + 1000;
         address[] memory path = new address[](2);
         (, bytes memory resultWETH) = address(iAddresses).staticcall(abi.encodeWithSignature('viewAddress(uint16)', uint16(103)));
@@ -64,11 +65,15 @@ contract Commander is WrapAddresses {
 
     function checkFee(uint count) internal {
         uint8 n = 0;
-        while (count >= 10) {
-            count = count / 10;
-            n++;
+        if (count > 10) {
+            while (count >= 10) {
+                count = count / 10;
+                n++;
+            }
+            require(msg.value > getPrice() * n * 5, 'C01');
+        } else {
+            require(msg.value > getPrice(), 'C01');
         }
-        require(msg.value > getPrice() * (n), 'C01');
     }
 
     function getPrice() internal view returns (uint256) {

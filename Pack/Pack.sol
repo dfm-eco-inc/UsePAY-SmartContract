@@ -86,5 +86,5 @@ contract Subscription is WrapAddresses {
 
     mapping(address => pack) internal buyList;
 
-    PackInfo packInfo;
+    PackInfo internal packInfo;
 }

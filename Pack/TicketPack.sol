@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: GNU LGPLv3
 pragma solidity >=0.7.0;
 pragma experimental ABIEncoderV2;
+
 import './Pack.sol';
 
 contract TicketPack is Ticket {
     constructor(PackInfo memory _packInfo, address _owner) {
+        require(_owner != address(0), 'AD01');
         packInfo = _packInfo;
         owner = _owner;
         quantity = _packInfo.total;

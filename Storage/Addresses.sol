@@ -4,12 +4,16 @@ pragma solidity =0.8.0;
 contract Addresses {
     mapping(uint16 => address) private addresses;
 
+    event setAddressEvent(address newAddress, uint16 idx);
+    event setAddressesEvent(address[] newAddresses, uint16[] idxs);
+
     modifier onlyManager() {
         require(checkManger(msg.sender), 'This address is not manager');
         _;
     }
 
     function checkManger(address _addr) public view returns (bool) {
+        require(_addr != address(0), 'AD01');
         for (uint8 i = 0; i < 100; i++) {
             if (addresses[i] == _addr) {
                 return true;
@@ -24,6 +28,7 @@ contract Addresses {
 
     function setAddress(uint16 _index, address _addr) external onlyManager {
         addresses[_index] = _addr;
+        emit setAddressEvent(_addr, _index);
     }
 
     function setAddresses(uint16[] memory _index, address[] memory _addr) external onlyManager {
@@ -31,6 +36,7 @@ contract Addresses {
         for (uint16 i = 0; i < _index.length; i++) {
             addresses[_index[i]] = _addr[i];
         }
+        emit setAddressesEvent(_addr, _index);
     }
 
     function viewAddress(uint16 _index) external view returns (address) {

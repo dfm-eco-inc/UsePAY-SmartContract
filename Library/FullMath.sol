@@ -136,9 +136,9 @@ contract FullMath {
 
             if (exponent < 16383) return 0; // Underflow
 
-            require(uint128(x) < 0x80000000000000000000000000000000); // Negative
+            require(uint128(x) < 0x80000000000000000000000000000000, 'Negative Error'); // Negative
 
-            require(exponent <= 16638); // Overflow
+            require(exponent <= 16638, 'Overflow Error'); // Overflow
             uint256 result = (uint256(uint128(x)) & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFF) | 0x10000000000000000000000000000;
 
             if (exponent < 16495) result >>= 16495 - exponent;
@@ -150,7 +150,7 @@ contract FullMath {
 
     function mostSignificantBit(uint256 x) private pure returns (uint256) {
         unchecked {
-            require(x > 0);
+            require(x > 0, 'x>0 Error');
 
             uint256 result = 0;
 

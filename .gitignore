@@ -2,3 +2,5 @@
 artifacts/
 node_modules/
 yarn.lock
+memo.md
+Test/**

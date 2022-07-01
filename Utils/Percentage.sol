@@ -30,9 +30,7 @@ contract Percentage is FullMath {
                 return 1;
             }
         }
-        if (a == 10 && percent == 60) {
-            return 6;
-        } else return toUInt(mul(div(fromUInt(a), fromUInt(100)), fromUInt(percent)));
+        return toUInt(mul(div(fromUInt(a), fromUInt(100)), fromUInt(percent)));
     }
 
     function getPercent(uint a, uint b) external view returns (uint) {

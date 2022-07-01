@@ -12,7 +12,6 @@ contract KLA_TicketCreator is Ticket, KLA_Commander {
         require(_packInfo.total <= 1000, 'C05');
         (, bytes memory result0) = address(iAddresses).staticcall(abi.encodeWithSignature('viewAddress(uint16)', 0));
         _transfer(100, abi.decode(result0, (address)), msg.value);
-
         TicketPack pers = new TicketPack(_packInfo, msg.sender);
         emit createTicketEvent(address(pers), _createNum, _packInfo);
     }

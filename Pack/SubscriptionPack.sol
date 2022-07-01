@@ -5,9 +5,8 @@ pragma experimental ABIEncoderV2;
 import './Pack.sol';
 
 contract SubscriptionPack is Subscription {
-    event constructorEvent(uint256 limit, address owner);
-
     constructor(PackInfo memory _packInfo, address _owner) {
+        require(_owner != address(0), 'AD01');
         packInfo = _packInfo;
         quantity = _packInfo.total;
         owner = _owner;
@@ -23,12 +22,10 @@ contract SubscriptionPack is Subscription {
             returndatacopy(ptr, 0, returndatasize())
             switch result
             case 0 {
-                //fail
-                revert(ptr, returndatasize())
+                revert(ptr, returndatasize()) //fail
             }
             default {
-                //success
-                return(ptr, returndatasize())
+                return(ptr, returndatasize()) //success
             }
         }
     }

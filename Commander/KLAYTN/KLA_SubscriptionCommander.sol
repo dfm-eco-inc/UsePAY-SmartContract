@@ -10,7 +10,7 @@ contract KLA_SubscriptionCommander is Subscription, KLA_Commander {
     event requestRefundEvent(address indexed pack, address buyer, uint256 num, uint256 money); // 0: pack indexed, 1: buyer, 2: count
     event noshowRefundEvent(address indexed pack);
     event noshowRefundUser(address indexed pack, address[] buyers, uint256[] value);
-    event calculateEvent(address indexed pack, address owner, uint256 value, uint256 swap);
+    event calculateEvent(address indexed pack, address owner, uint256 value);
     event changeTotalEvent(address indexed, uint256 _before, uint256 _after);
 
     modifier onlyOwner() {
@@ -18,7 +18,7 @@ contract KLA_SubscriptionCommander is Subscription, KLA_Commander {
         _;
     }
 
-    modifier onCaculateTime() {
+    modifier onCalculateTime() {
         require(block.timestamp > packInfo.times3, 'CT01');
         _;
     }
@@ -70,7 +70,7 @@ contract KLA_SubscriptionCommander is Subscription, KLA_Commander {
         emit buyEvent(address(this), buyNum, msg.sender);
     }
 
-    function give(address[] memory toAddr) external payable canUse checkLive {
+    function give(address[] memory toAddr) external canUse checkLive {
         buyList[msg.sender].hasCount = buyList[msg.sender].hasCount - uint32(toAddr.length);
         for (uint i = 0; i < toAddr.length; i++) {
             buyList[toAddr[i]].hasCount++;
@@ -78,22 +78,20 @@ contract KLA_SubscriptionCommander is Subscription, KLA_Commander {
         emit giftEvent(address(this), msg.sender, toAddr);
     }
 
-    function requestRefund() external payable canUse blockReEntry {
+    function requestRefund() external canUse blockReEntry {
         uint refundValue = 0;
         if (isLive == 0) {
             if (block.timestamp < packInfo.times2) {
                 quantity++;
                 refundValue = packInfo.price;
             } else if (block.timestamp > packInfo.times2 && block.timestamp < packInfo.times2 + 172800) {
-                if (block.timestamp > packInfo.times2) {
-                    if (noshowLimit == 0) {
-                        noshowLimit = _percentValue(packInfo.total - quantity, 60);
-                    }
-                    noshowCount++;
-                    if (noshowCount >= noshowLimit) {
-                        isLive = 1;
-                        noShowTime = block.timestamp;
-                    }
+                if (noshowLimit == 0) {
+                    noshowLimit = _percentValue(packInfo.total - quantity, 60);
+                }
+                noshowCount++;
+                if (noshowCount >= noshowLimit) {
+                    isLive = 1;
+                    noShowTime = block.timestamp;
                 }
                 refundValue = packInfo.price;
             } else if (block.timestamp > packInfo.times2 + 172800) {
@@ -114,11 +112,10 @@ contract KLA_SubscriptionCommander is Subscription, KLA_Commander {
         emit requestRefundEvent(address(this), msg.sender, 1, refundValue);
     }
 
-    function calculate() external payable onCaculateTime checkLive {
+    function calculate() external onCalculateTime checkLive {
         uint256 a = 2592000;
         // uint256 a = 300;
         uint256 balance = 0;
-        uint256 swap = 0;
         if (block.timestamp > packInfo.times3 + a) {
             // caculate Manager
             checkManager(msg.sender);
@@ -145,10 +142,10 @@ contract KLA_SubscriptionCommander is Subscription, KLA_Commander {
             }
             _transfer(packInfo.tokenType, owner, balance);
         }
-        emit calculateEvent(address(this), owner, balance, swap);
+        emit calculateEvent(address(this), owner, balance);
     }
 
-    function noShowRefund(address[] calldata _addrList) external payable onlyManager(msg.sender) {
+    function noShowRefund(address[] calldata _addrList) external onlyManager(msg.sender) {
         require(isLive == 1, 'N02');
         require(block.timestamp > noShowTime + 15552000, 'N03');
         // require(block.timestamp > noShowTime + 300,"N03");
@@ -166,7 +163,8 @@ contract KLA_SubscriptionCommander is Subscription, KLA_Commander {
     }
 
     function changeTotal(uint32 _count) external payable onlyOwner {
-        require(packInfo.total - quantity <= _count, 'count too high');
+        require(packInfo.total - quantity <= _count, 'TC01');
+        require(_count <= 1000, 'C05');
         if (_count > packInfo.total) {
             checkFee(_count - packInfo.total);
             (, bytes memory result0) = address(iAddresses).staticcall(abi.encodeWithSignature('viewAddress(uint16)', 0));
