@@ -15,7 +15,7 @@ contract CouponCommander is Commander, Coupon {
 
     function changeTotal(uint32 _count) external payable onlyOwner {
         require(packInfo.total - quantity <= _count, 'TC01');
-        require(_count <= 1000, 'C05');
+        require(_count <= 3000, 'C05');
         if (_count > packInfo.total) {
             checkFee(_count - packInfo.total);
             _swap(msg.sender, msg.value);
