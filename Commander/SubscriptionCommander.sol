@@ -172,7 +172,6 @@ contract SubscriptionCommander is Subscription, Commander {
     function noShowRefund(address[] calldata _addrList) external onlyManager(msg.sender) {
         require(isLive == 1, 'N02');
         require(block.timestamp > noShowTime + 15552000, 'N03');
-        // require(block.timestamp > noShowTime + 300,"N03");
         uint256[] memory values = new uint256[](_addrList.length);
         uint256[] memory swaps = new uint256[](_addrList.length);
         uint refundValue = _percentValue(packInfo.price, 95);
