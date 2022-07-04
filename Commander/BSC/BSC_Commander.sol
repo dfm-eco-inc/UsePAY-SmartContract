@@ -97,7 +97,7 @@ contract Commander is WrapAddresses {
                 count = count / 10;
                 n++;
             }
-            return getPrice() * n;
+            return getPrice() * n * 5;
         } else {
             return getPrice();
         }
