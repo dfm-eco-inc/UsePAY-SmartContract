@@ -2,20 +2,20 @@
 pragma solidity >=0.7.0;
 pragma experimental ABIEncoderV2;
 
-import '../Pack/CouponPack.sol';
-import './Commander.sol';
+import "../Pack/CouponPack.sol";
+import "./Commander.sol";
 
 contract CouponCommander is Commander, Coupon {
     event changeTotalEvent(address indexed, uint256 _before, uint256 _after);
 
     modifier onlyOwner() {
-        require(msg.sender == owner, 'O01');
+        require(msg.sender == owner, "O01");
         _;
     }
 
     function changeTotal(uint32 _count) external payable onlyOwner {
-        require(packInfo.total - quantity <= _count, 'TC01');
-        require(_count <= 3000, 'C05');
+        require(packInfo.total - quantity <= _count, "TC01");
+        require(_count <= 3000, "C05");
         if (_count > packInfo.total) {
             checkFee(_count - packInfo.total);
             _swap(msg.sender, msg.value);

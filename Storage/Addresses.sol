@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GNU LGPLv3
-pragma solidity =0.8.0;
+pragma solidity >=0.8.0;
 
 contract Addresses {
     mapping(uint16 => address) private addresses;
@@ -8,18 +8,8 @@ contract Addresses {
     event setAddressesEvent(address[] newAddresses, uint16[] idxs);
 
     modifier onlyManager() {
-        require(checkManger(msg.sender), 'This address is not manager');
+        require(checkManger(msg.sender), "This address is not manager");
         _;
-    }
-
-    function checkManger(address _addr) public view returns (bool) {
-        require(_addr != address(0), 'AD01');
-        for (uint8 i = 0; i < 100; i++) {
-            if (addresses[i] == _addr) {
-                return true;
-            }
-        }
-        return false;
     }
 
     constructor() {
@@ -32,7 +22,7 @@ contract Addresses {
     }
 
     function setAddresses(uint16[] memory _index, address[] memory _addr) external onlyManager {
-        require(_index.length == _addr.length, 'not same _index,_addr length');
+        require(_index.length == _addr.length, "not same _index,_addr length");
         for (uint16 i = 0; i < _index.length; i++) {
             addresses[_index[i]] = _addr[i];
         }
@@ -41,5 +31,15 @@ contract Addresses {
 
     function viewAddress(uint16 _index) external view returns (address) {
         return addresses[_index];
+    }
+
+    function checkManger(address _addr) public view returns (bool) {
+        require(_addr != address(0), "AD01");
+        for (uint8 i = 0; i < 100; i++) {
+            if (addresses[i] == _addr) {
+                return true;
+            }
+        }
+        return false;
     }
 }

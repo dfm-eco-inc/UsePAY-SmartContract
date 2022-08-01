@@ -2,9 +2,14 @@
 pragma solidity >=0.8.0;
 pragma experimental ABIEncoderV2;
 
-import '../Library/FullMath.sol';
+import "../Library/FullMath.sol";
 
 contract Percentage is FullMath {
+    function getPercent(uint a, uint b) external view returns (uint) {
+        require(a >= b, "getPercent Error : a<b");
+        return toUInt(mul(div(fromUInt(b), fromUInt(a)), fromUInt(100)));
+    }
+
     function getValue(uint a, uint percent) public view returns (uint) {
         if (percent == 100) {
             return a;
@@ -31,10 +36,5 @@ contract Percentage is FullMath {
             }
         }
         return toUInt(mul(div(fromUInt(a), fromUInt(100)), fromUInt(percent)));
-    }
-
-    function getPercent(uint a, uint b) external view returns (uint) {
-        require(a >= b, 'getPercent Error : a<b');
-        return toUInt(mul(div(fromUInt(b), fromUInt(a)), fromUInt(100)));
     }
 }

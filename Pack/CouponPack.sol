@@ -1,19 +1,21 @@
 // SPDX-License-Identifier: GNU LGPLv3
 pragma solidity >=0.7.0;
 pragma experimental ABIEncoderV2;
-import './Pack.sol';
+import "./Pack.sol";
 
 contract CouponPack is Coupon {
     constructor(PackInfo memory _packInfo, address _owner) {
-        require(_owner != address(0), 'AD01');
+        require(_owner != address(0), "AD01");
         packInfo = _packInfo;
         owner = _owner;
         quantity = _packInfo.total;
     }
 
     fallback() external payable {
-        (bool success, bytes memory result0) = address(iAddresses).staticcall(abi.encodeWithSignature('viewAddress(uint16)', 10001));
-        require(success, 'viewCouponCommander Fail');
+        (bool success, bytes memory result0) = address(iAddresses).staticcall(
+            abi.encodeWithSignature("viewAddress(uint16)", 10001)
+        );
+        require(success, "viewCouponCommander Fail");
         address coupon_commander = abi.decode(result0, (address));
         assembly {
             let ptr := mload(0x40)

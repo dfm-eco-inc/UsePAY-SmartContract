@@ -5,11 +5,11 @@
       "options": {
         "compiler": "0.8.0",
         "tabWidth": 4,
+        "printWidth": 99,
         "useTabs": false,
-        "printWidth": 240,
-        "singleQuote": true,
+        "singleQuote": false,
         "trailingComma": "none",
-        "bracketSpacing": true,
+        "bracketSpacing": false,
         "endOfLine": "lf",
         "explicitTypes": "preserve"
       }

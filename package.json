@@ -5,8 +5,14 @@
   "repository": "https://github.com/dfm-eco-inc/UsePAY-SmartContract.git",
   "author": "DFM eco Inc. <usepay@mail.dfmeco.io> (https://dfmeco.io)",
   "license": "SEE LICENSE IN LICENSE.md",
+  "scripts": {
+    "lint": "solhint '**/*.sol'",
+    "prettier": "prettier --write '**/*.sol'"
+  },
   "devDependencies": {
     "prettier": "^2.7.1",
-    "prettier-plugin-solidity": "^1.0.0-beta.19"
+    "prettier-plugin-solidity": "^1.0.0-dev.23",
+    "solhint": "^3.3.7",
+    "solhint-plugin-prettier": "^0.0.5"
   }
 }

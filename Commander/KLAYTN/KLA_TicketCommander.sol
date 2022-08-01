@@ -2,8 +2,8 @@
 pragma solidity >=0.8.0;
 pragma experimental ABIEncoderV2;
 
-import '../../Pack/TicketPack.sol';
-import './KLA_Commander.sol';
+import "../../Pack/TicketPack.sol";
+import "./KLA_Commander.sol";
 
 contract KLA_TicketCommander is Ticket, KLA_Commander {
     event buyEvent(address indexed pack, uint256 buyNum, address buyer, uint256 count); // 0: pack indexed, 1: buyer, 2: count
@@ -13,53 +13,44 @@ contract KLA_TicketCommander is Ticket, KLA_Commander {
     event changeTotalEvent(address indexed, uint256 _before, uint256 _after);
 
     modifier onlyOwner() {
-        require(msg.sender == owner, 'O01');
+        require(msg.sender == owner, "O01");
         _;
     }
 
     modifier onCalculateTime() {
-        require(block.timestamp > packInfo.times3, 'CT01');
+        require(block.timestamp > packInfo.times3, "CT01");
         _;
     }
 
     modifier canUse(uint256 count) {
-        require(buyList[msg.sender].hasCount - buyList[msg.sender].useCount >= count, 'U02');
+        require(buyList[msg.sender].hasCount - buyList[msg.sender].useCount >= count, "U02");
         _;
     }
 
     modifier canBuy(uint256 count) {
-        require(block.timestamp >= packInfo.times0 && block.timestamp <= packInfo.times1, 'B01');
-        require(quantity - count >= 0, 'B04');
+        require(block.timestamp >= packInfo.times0 && block.timestamp <= packInfo.times1, "B01");
+        require(quantity - count >= 0, "B04");
         if (packInfo.tokenType == 100) {
-            require(msg.value == packInfo.price * (count), 'B03');
+            require(msg.value == packInfo.price * (count), "B03");
         } else {
-            (, bytes memory tokenResult) = address(iAddresses).staticcall(abi.encodeWithSignature('viewAddress(uint16)', uint16(packInfo.tokenType)));
-            (bool success, ) = address(abi.decode(tokenResult, (address))).call(abi.encodeWithSignature('transferFrom(address,address,uint256)', msg.sender, address(this), packInfo.price * (count)));
-            require(success, 'T01');
+            (, bytes memory tokenResult) = address(iAddresses).staticcall(
+                abi.encodeWithSignature("viewAddress(uint16)", uint16(packInfo.tokenType))
+            );
+            (bool success, ) = address(abi.decode(tokenResult, (address))).call(
+                abi.encodeWithSignature(
+                    "transferFrom(address,address,uint256)",
+                    msg.sender,
+                    address(this),
+                    packInfo.price * (count)
+                )
+            );
+            require(success, "T01");
         }
         _;
     }
 
-    function _percentValue(uint value, uint8 percent) private view returns (uint) {
-        (, bytes memory resultPercent) = address(iAddresses).staticcall(abi.encodeWithSignature('viewAddress(uint16)', 1300));
-        address percentAddr = abi.decode(resultPercent, (address));
-        (, bytes memory resultPercentValue) = address(percentAddr).staticcall(abi.encodeWithSignature('getValue(uint256,uint256)', value, percent));
-        return abi.decode(resultPercentValue, (uint));
-    }
-
-    function _buy(uint32 count, address buyer) private {
-        buyList[buyer].hasCount = buyList[buyer].hasCount + (count);
-        quantity = quantity - count;
-    }
-
-    function _refund(address _to, uint value) private returns (uint256) {
-        uint refundValue = value;
-        _transfer(packInfo.tokenType, _to, refundValue);
-        return refundValue;
-    }
-
     function buy(uint32 count, uint256 buyNum) external payable canBuy(count) {
-        require(count <= packInfo.maxCount, 'B05');
+        require(count <= packInfo.maxCount, "B05");
         _buy(count, msg.sender);
         emit buyEvent(address(this), buyNum, msg.sender, count);
     }
@@ -73,7 +64,7 @@ contract KLA_TicketCommander is Ticket, KLA_Commander {
     }
 
     function use(uint32 _count) external canUse(_count) {
-        require(block.timestamp > packInfo.times2, 'U01');
+        require(block.timestamp > packInfo.times2, "U01");
         totalUsedCount = totalUsedCount + _count;
         buyList[msg.sender].useCount = buyList[msg.sender].useCount + (_count);
         _transfer(packInfo.tokenType, owner, packInfo.price * (_count));
@@ -100,7 +91,7 @@ contract KLA_TicketCommander is Ticket, KLA_Commander {
     }
 
     function calculate() external onlyOwner onCalculateTime {
-        require(isCalculated == 0, 'CT03');
+        require(isCalculated == 0, "CT03");
         uint quantityCount = packInfo.total - quantity - totalUsedCount;
         uint qunaityValue = _percentValue(packInfo.price, packInfo.noshowValue) * quantityCount;
         _transfer(packInfo.tokenType, owner, qunaityValue);
@@ -109,11 +100,13 @@ contract KLA_TicketCommander is Ticket, KLA_Commander {
     }
 
     function changeTotal(uint32 _count) external payable onlyOwner {
-        require(packInfo.total - quantity <= _count, 'TC01');
-        require(_count <= 1000, 'C05');
+        require(packInfo.total - quantity <= _count, "TC01");
+        require(_count <= 1000, "C05");
         if (_count > packInfo.total) {
             checkFee(_count - packInfo.total);
-            (, bytes memory result0) = address(iAddresses).staticcall(abi.encodeWithSignature('viewAddress(uint16)', 0));
+            (, bytes memory result0) = address(iAddresses).staticcall(
+                abi.encodeWithSignature("viewAddress(uint16)", 0)
+            );
             _transfer(100, abi.decode(result0, (address)), msg.value);
             quantity = quantity + (_count - packInfo.total);
         } else {
@@ -145,5 +138,27 @@ contract KLA_TicketCommander is Ticket, KLA_Commander {
 
     function viewTotalUsedCount() external view returns (uint32) {
         return totalUsedCount;
+    }
+
+    function _percentValue(uint value, uint8 percent) private view returns (uint) {
+        (, bytes memory resultPercent) = address(iAddresses).staticcall(
+            abi.encodeWithSignature("viewAddress(uint16)", 1300)
+        );
+        address percentAddr = abi.decode(resultPercent, (address));
+        (, bytes memory resultPercentValue) = address(percentAddr).staticcall(
+            abi.encodeWithSignature("getValue(uint256,uint256)", value, percent)
+        );
+        return abi.decode(resultPercentValue, (uint));
+    }
+
+    function _buy(uint32 count, address buyer) private {
+        buyList[buyer].hasCount = buyList[buyer].hasCount + (count);
+        quantity = quantity - count;
+    }
+
+    function _refund(address _to, uint value) private returns (uint256) {
+        uint refundValue = value;
+        _transfer(packInfo.tokenType, _to, refundValue);
+        return refundValue;
     }
 }

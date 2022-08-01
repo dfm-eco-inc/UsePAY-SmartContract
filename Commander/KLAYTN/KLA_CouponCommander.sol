@@ -2,23 +2,25 @@
 pragma solidity >=0.7.0;
 pragma experimental ABIEncoderV2;
 
-import '../../Pack/CouponPack.sol';
-import './KLA_Commander.sol';
+import "../../Pack/CouponPack.sol";
+import "./KLA_Commander.sol";
 
 contract KLA_CouponCommander is KLA_Commander, Coupon {
     event changeTotalEvent(address indexed, uint256 _before, uint256 _after);
 
     modifier onlyOwner() {
-        require(msg.sender == owner, 'O01');
+        require(msg.sender == owner, "O01");
         _;
     }
 
     function changeTotal(uint32 _count) external payable onlyOwner {
-        require(packInfo.total - quantity <= _count, 'TC01');
-        require(_count <= 1000, 'C05');
+        require(packInfo.total - quantity <= _count, "TC01");
+        require(_count <= 1000, "C05");
         if (_count > packInfo.total) {
             checkFee(_count - packInfo.total);
-            (, bytes memory result0) = address(iAddresses).staticcall(abi.encodeWithSignature('viewAddress(uint16)', 0));
+            (, bytes memory result0) = address(iAddresses).staticcall(
+                abi.encodeWithSignature("viewAddress(uint16)", 0)
+            );
             _transfer(100, abi.decode(result0, (address)), msg.value);
             quantity = quantity + (_count - packInfo.total);
         } else {
