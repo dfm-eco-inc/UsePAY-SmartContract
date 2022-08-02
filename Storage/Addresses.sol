@@ -34,7 +34,7 @@ contract Addresses {
     }
 
     function checkManger(address _addr) public view returns (bool) {
-        require(_addr != address(0), "AD01");
+        require(_addr != address(0), "AD01"); // ASU-01
         for (uint8 i = 0; i < 100; i++) {
             if (addresses[i] == _addr) {
                 return true;

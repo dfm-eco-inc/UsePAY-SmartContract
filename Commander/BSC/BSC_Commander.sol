@@ -1,20 +1,30 @@
 // SPDX-License-Identifier: GNU LGPLv3
-pragma solidity >=0.7.0;
+pragma solidity ^0.8.7;
 pragma experimental ABIEncoderV2;
 
 import "../../Storage/WrapAddresses.sol";
+import "../../Library/AggregatorV3Interface.sol";
 
 contract Commander is WrapAddresses {
+    AggregatorV3Interface internal priceFeed;
     bool private reEntry = false;
 
-    event giftEvent(address indexed pack, address fromAddr, address[] toAddr); // 0: pack indexed, 1: from, 2: to, 3: count
-    event giveEvent(address indexed pack, address fromAddr, address[] toAddr); // 0: pack indexed, 1: from, 2: to, 3: count
+    event giftEvent(address indexed pack, address fromAddr, address[] toAddr);
+    event giveEvent(address indexed pack, address fromAddr, address[] toAddr);
+    event getChainlinkDataFeedAddressEvent(address dataFeed);
 
     modifier blockReEntry() {
         require(!reEntry, "Not allowed");
         reEntry = true;
         _;
         reEntry = false;
+    }
+
+    constructor() {
+        // Data Feeds Addresses : https://docs.chain.link/docs/reference-contracts
+        address dataFeedAddress = 0x2514895c72f50D8bd4B4F9b1110F0D6bD2c97526;
+        priceFeed = AggregatorV3Interface(dataFeedAddress);
+        emit getChainlinkDataFeedAddressEvent(dataFeedAddress);
     }
 
     function getCountFee(uint count) external view returns (uint256) {
@@ -28,6 +38,13 @@ contract Commander is WrapAddresses {
         } else {
             return getPrice();
         }
+    }
+
+    // Returning value of WEI of the native token
+    function getPrice() public view returns (uint256) {
+        (, int price, , , ) = priceFeed.latestRoundData();
+        uint256 totalDecimal = 10**(18 + priceFeed.decimals());
+        return totalDecimal / uint256(price);
     }
 
     function _transfer(
@@ -110,27 +127,5 @@ contract Commander is WrapAddresses {
         } else {
             require(msg.value > getPrice(), "C01");
         }
-    }
-
-    function getPrice() internal view returns (uint256) {
-        (, bytes memory resultRouter) = address(iAddresses).staticcall(
-            abi.encodeWithSignature("viewAddress(uint16)", 1200)
-        );
-        address uniswapRouter = abi.decode(resultRouter, (address));
-        address[] memory path = new address[](2);
-        (, bytes memory wBnbResult) = address(iAddresses).staticcall(
-            abi.encodeWithSignature("viewAddress(uint16)", 103)
-        );
-        (, bytes memory usdtResult) = address(iAddresses).staticcall(
-            abi.encodeWithSignature("viewAddress(uint16)", 506)
-        ); // BUSD
-        path[0] = abi.decode(usdtResult, (address));
-        path[1] = abi.decode(wBnbResult, (address));
-        (bool success, bytes memory result) = address(uniswapRouter).staticcall(
-            abi.encodeWithSignature("getAmountsOut(uint256,address[])", 1000000000000000000, path)
-        );
-        require(success, "callAmounts fail");
-        uint[] memory a = abi.decode(result, (uint[]));
-        return a[1];
     }
 }

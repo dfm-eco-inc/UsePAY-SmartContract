@@ -6,11 +6,11 @@ import "../../Pack/TicketPack.sol";
 import "../../Commander/BSC/BSC_Commander.sol";
 
 contract BSC_TicketCreator is Ticket, Commander {
-    event createTicketEvent(address indexed pack, uint256 createNum, PackInfo packInfo); // 0: pack indexed, 1 : craeteTime , 2 : packInfo
-    event setSwapCountEvent(address indexed owner, uint8 beforeCnt, uint8 afterCnt);
+    event createTicketEvent(address indexed pack, uint256 createNum, PackInfo packInfo); // 0: pack indexed, 1: unique number, 2: PackInfo
 
     function createTicket(PackInfo calldata _packInfo, uint256 _createNum) external payable {
         require(_packInfo.total <= 1000, "C05");
+        checkFee(packInfo.total);
         _swap(101, msg.sender, msg.value);
         TicketPack pers = new TicketPack(_packInfo, msg.sender);
         emit createTicketEvent(address(pers), _createNum, _packInfo);
