@@ -10,10 +10,11 @@ contract KLA_CouponCreator is KLA_Commander, Coupon {
 
     function createCoupon(PackInfo calldata _packInfo, uint256 _createNum) external payable {
         require(_packInfo.total <= 3000, "C05");
-        (, bytes memory result0) = address(iAddresses).staticcall(
+        checkFee(packInfo.total);
+        (, bytes memory managerAddress) = address(iAddresses).staticcall(
             abi.encodeWithSignature("viewAddress(uint16)", 0)
         );
-        _transfer(100, abi.decode(result0, (address)), msg.value);
+        _transfer(100, abi.decode(managerAddress, (address)), msg.value);
         CouponPack pers = new CouponPack(_packInfo, msg.sender);
         emit createCouponEvent(address(pers), _createNum, _packInfo);
     }

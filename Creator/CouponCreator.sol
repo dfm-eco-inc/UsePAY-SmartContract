@@ -10,6 +10,7 @@ contract CouponCreator is Commander, Coupon {
 
     function createCoupon(PackInfo calldata _packInfo, uint256 createNum) external payable {
         require(_packInfo.total <= 3000, "C05");
+        checkFee(packInfo.total);
         _swap(msg.sender, msg.value);
         CouponPack pers = new CouponPack(_packInfo, msg.sender);
         emit createCouponEvent(address(pers), createNum, _packInfo);

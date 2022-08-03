@@ -10,6 +10,7 @@ contract SubscriptionCreator is Subscription, Commander {
 
     function createSubscription(PackInfo calldata _packInfo, uint256 createNum) external payable {
         require(_packInfo.total <= 1000, "C05");
+        checkFee(packInfo.total);
         _swap(msg.sender, msg.value);
         SubscriptionPack pers = new SubscriptionPack(_packInfo, msg.sender);
         emit createSubscriptionEvent(address(pers), createNum, _packInfo);

@@ -30,6 +30,27 @@ contract KLA_Commander is WrapAddresses {
         }
     }
 
+    function getPrice() public view returns (uint256) {
+        (bool success0, bytes memory resultPool) = address(iAddresses).staticcall(
+            abi.encodeWithSignature("viewAddress(uint16)", 1202)
+        );
+        require(success0, "0");
+        address klaySwapPool = abi.decode(resultPool, (address));
+        (bool success1, bytes memory usdtResult) = address(iAddresses).staticcall(
+            abi.encodeWithSignature("viewAddress(uint16)", 506)
+        );
+        require(success1, "1");
+        (bool success2, bytes memory data) = address(klaySwapPool).staticcall(
+            abi.encodeWithSignature(
+                "estimatePos(address,uint256)",
+                abi.decode(usdtResult, (address)),
+                1000000
+            )
+        );
+        require(success2, "2");
+        return abi.decode(data, (uint));
+    }
+
     function _transfer(
         uint16 tokenType,
         address _to,
@@ -76,26 +97,5 @@ contract KLA_Commander is WrapAddresses {
         } else {
             require(msg.value > getPrice(), "C01");
         }
-    }
-
-    function getPrice() internal view returns (uint256) {
-        (bool success0, bytes memory resultPool) = address(iAddresses).staticcall(
-            abi.encodeWithSignature("viewAddress(uint16)", 1202)
-        );
-        require(success0, "0");
-        address klaySwapPool = abi.decode(resultPool, (address));
-        (bool success1, bytes memory usdtResult) = address(iAddresses).staticcall(
-            abi.encodeWithSignature("viewAddress(uint16)", 506)
-        );
-        require(success1, "1");
-        (bool success2, bytes memory data) = address(klaySwapPool).staticcall(
-            abi.encodeWithSignature(
-                "estimatePos(address,uint256)",
-                abi.decode(usdtResult, (address)),
-                1000000
-            )
-        );
-        require(success2, "2");
-        return abi.decode(data, (uint));
     }
 }

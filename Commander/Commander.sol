@@ -16,14 +16,6 @@ contract Commander is WrapAddresses {
         uint160 sqrtPriceLimitX96;
     }
 
-    struct ExactInputParams {
-        bytes path;
-        address recipient;
-        uint256 deadline;
-        uint256 amountIn;
-        uint256 amountOutMinimum;
-    }
-
     bool private reEntry = false;
 
     event giftEvent(address indexed pack, address fromAddr, address[] toAddr); // 0: pack indexed, 1: from, 2: to, 3: count
@@ -47,6 +39,28 @@ contract Commander is WrapAddresses {
         } else {
             return getPrice();
         }
+    }
+
+    function getPrice() public view returns (uint) {
+        (, bytes memory result0) = address(iAddresses).staticcall(
+            abi.encodeWithSignature("viewAddress(uint16)", 1201)
+        );
+        address uniswapFactory = abi.decode(result0, (address));
+        (, bytes memory result1) = address(iAddresses).staticcall(
+            abi.encodeWithSignature("viewAddress(uint16)", 102)
+        );
+        address USDT = abi.decode(result1, (address));
+        (, bytes memory result2) = address(iAddresses).staticcall(
+            abi.encodeWithSignature("viewAddress(uint16)", 103)
+        );
+        address WETH = abi.decode(result2, (address));
+        (, bytes memory result3) = address(uniswapFactory).staticcall(
+            abi.encodeWithSignature("getPool(address,address,uint24)", USDT, WETH, 500)
+        );
+        address poolAddr = abi.decode(result3, (address));
+        (, bytes memory result4) = poolAddr.staticcall(abi.encodeWithSignature("slot0()"));
+        uint sqrtPriceX96 = abi.decode(result4, (uint));
+        return (sqrtPriceX96 * sqrtPriceX96 * 1e6) >> (96 * 2);
     }
 
     function _transfer(
@@ -137,27 +151,5 @@ contract Commander is WrapAddresses {
         } else {
             require(msg.value > getPrice(), "C01");
         }
-    }
-
-    function getPrice() internal view returns (uint) {
-        (, bytes memory result0) = address(iAddresses).staticcall(
-            abi.encodeWithSignature("viewAddress(uint16)", 1201)
-        );
-        address uniswapFactory = abi.decode(result0, (address));
-        (, bytes memory result1) = address(iAddresses).staticcall(
-            abi.encodeWithSignature("viewAddress(uint16)", 102)
-        );
-        address USDT = abi.decode(result1, (address));
-        (, bytes memory result2) = address(iAddresses).staticcall(
-            abi.encodeWithSignature("viewAddress(uint16)", 103)
-        );
-        address WETH = abi.decode(result2, (address));
-        (, bytes memory result3) = address(uniswapFactory).staticcall(
-            abi.encodeWithSignature("getPool(address,address,uint24)", USDT, WETH, 500)
-        );
-        address poolAddr = abi.decode(result3, (address));
-        (, bytes memory result4) = poolAddr.staticcall(abi.encodeWithSignature("slot0()"));
-        uint sqrtPriceX96 = abi.decode(result4, (uint));
-        return (sqrtPriceX96 * sqrtPriceX96 * 1e6) >> (96 * 2);
     }
 }
