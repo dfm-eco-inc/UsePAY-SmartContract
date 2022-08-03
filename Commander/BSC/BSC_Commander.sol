@@ -8,7 +8,6 @@ contract Commander is WrapAddresses {
     AggregatorV3Interface internal priceFeed;
     bool private reEntry = false;
 
-    event giftEvent(address indexed pack, address fromAddr, address[] toAddr);
     event giveEvent(address indexed pack, address fromAddr, address[] toAddr);
     event getChainlinkDataFeedAddressEvent(address dataFeed);
 

@@ -65,7 +65,7 @@ contract KLA_SubscriptionCommander is Subscription, KLA_Commander {
         for (uint i = 0; i < toAddr.length; i++) {
             buyList[toAddr[i]].hasCount++;
         }
-        emit giftEvent(address(this), msg.sender, toAddr);
+        emit giveEvent(address(this), msg.sender, toAddr);
     }
 
     function requestRefund() external canUse blockReEntry {

@@ -6,8 +6,7 @@ import "../../Storage/WrapAddresses.sol";
 contract KLA_Commander is WrapAddresses {
     bool private reEntry = false;
 
-    event giftEvent(address indexed pack, address fromAddr, address[] toAddr); // 0: pack indexed, 1: from, 2: to, 3: count
-    event giveEvent(address indexed pack, address fromAddr, address[] toAddr); // 0: pack indexed, 1: from, 2: to, 3: count
+    event giveEvent(address indexed pack, address fromAddr, address[] toAddr);
 
     modifier blockReEntry() {
         require(!reEntry, "Not allowed");
