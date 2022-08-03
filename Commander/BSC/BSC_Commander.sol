@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: GNU LGPLv3
 pragma solidity ^0.8.7;
-pragma experimental ABIEncoderV2;
 
 import "../../Storage/WrapAddresses.sol";
 import "../../Library/AggregatorV3Interface.sol";
