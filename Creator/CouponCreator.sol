@@ -6,7 +6,7 @@ import "../Pack/CouponPack.sol";
 import "../Commander/Commander.sol";
 
 contract CouponCreator is Commander, Coupon {
-    event createCouponEvent(address indexed pack, uint256 createNum, PackInfo packInfo); // 0: pack indexed, 2: createTime, 3: PackInfo
+    event createCouponEvent(address indexed pack, uint256 createNum, PackInfo packInfo); // 0: pack indexed, 2: reference value, 3: PackInfo
 
     function createCoupon(PackInfo calldata _packInfo, uint256 createNum) external payable {
         require(_packInfo.total <= 3000, "C05");
