@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "../Storage/WrapAddresses.sol";
+import "../Library/AggregatorV3Interface.sol";
 
 contract Commander is WrapAddresses {
     struct ExactInputSingleParams {
@@ -15,15 +16,24 @@ contract Commander is WrapAddresses {
         uint160 sqrtPriceLimitX96;
     }
 
+    AggregatorV3Interface internal priceFeed;
     bool private reEntry = false;
 
     event giveEvent(address indexed pack, address fromAddr, address[] toAddr);
+    event getChainlinkDataFeedAddressEvent(address dataFeed);
 
     modifier blockReEntry() {
         require(!reEntry, "Not allowed");
         reEntry = true;
         _;
         reEntry = false;
+    }
+
+    constructor() {
+        // Data Feeds Addresses : https://docs.chain.link/docs/reference-contracts
+        address dataFeedAddress = 0x8A753747A1Fa494EC906cE90E9f37563A8AF630e;
+        priceFeed = AggregatorV3Interface(dataFeedAddress);
+        emit getChainlinkDataFeedAddressEvent(dataFeedAddress);
     }
 
     function getCountFee(uint count) external view returns (uint256) {
@@ -39,26 +49,11 @@ contract Commander is WrapAddresses {
         }
     }
 
-    function getPrice() public view returns (uint) {
-        (, bytes memory result0) = address(iAddresses).staticcall(
-            abi.encodeWithSignature("viewAddress(uint16)", 1201)
-        );
-        address uniswapFactory = abi.decode(result0, (address));
-        (, bytes memory result1) = address(iAddresses).staticcall(
-            abi.encodeWithSignature("viewAddress(uint16)", 102)
-        );
-        address USDT = abi.decode(result1, (address));
-        (, bytes memory result2) = address(iAddresses).staticcall(
-            abi.encodeWithSignature("viewAddress(uint16)", 103)
-        );
-        address WETH = abi.decode(result2, (address));
-        (, bytes memory result3) = address(uniswapFactory).staticcall(
-            abi.encodeWithSignature("getPool(address,address,uint24)", USDT, WETH, 500)
-        );
-        address poolAddr = abi.decode(result3, (address));
-        (, bytes memory result4) = poolAddr.staticcall(abi.encodeWithSignature("slot0()"));
-        uint sqrtPriceX96 = abi.decode(result4, (uint));
-        return (sqrtPriceX96 * sqrtPriceX96 * 1e6) >> (96 * 2);
+    // Returning value of WEI of the native token
+    function getPrice() public view returns (uint256) {
+        (, int price, , , ) = priceFeed.latestRoundData();
+        uint256 totalDecimal = 10**(18 + priceFeed.decimals());
+        return totalDecimal / uint256(price);
     }
 
     function _transfer(
