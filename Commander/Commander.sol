@@ -149,11 +149,8 @@ contract Commander is WrapAddresses {
             ),
             addressToBytes(_toToken)
         );
-        address recipient = _to;
         uint256 deadline = block.timestamp + 15;
-        uint256 amountIn = _amountIn;
-        uint256 amountOutMin = 1;
-        return ExactInputParams(path, recipient, deadline, amountIn, amountOutMin);
+        return ExactInputParams(path, _to, deadline, _amountIn, 1);
     }
 
     function mergeBytes(bytes memory a, bytes memory b) internal pure returns (bytes memory c) {
