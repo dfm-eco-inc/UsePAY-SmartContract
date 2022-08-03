@@ -112,72 +112,18 @@ contract Commander is WrapAddresses {
             abi.encodeWithSignature("viewAddress(uint16)", 103)
         );
         address WETH = abi.decode(result0, (address));
-        uint24 fee = 500;
         uint256 deadline = block.timestamp + 15;
-        uint256 amountOutMin = 0;
-        uint160 sqrtPriceLimitX96 = 0;
         return
             ExactInputSingleParams(
                 WETH,
                 _tokenAddr,
-                fee,
+                500, // fee
                 _to,
                 deadline,
                 _amountIn,
-                amountOutMin,
-                sqrtPriceLimitX96
+                0, // amountOutMin
+                0 // sqrtPriceLimitX96
             );
-    }
-
-    function getExactInputParams(
-        address _to,
-        uint256 _amountIn,
-        address _fromToken,
-        address _toToken
-    ) internal view returns (ExactInputParams memory) {
-        (, bytes memory result0) = address(iAddresses).staticcall(
-            abi.encodeWithSignature("viewAddress(uint16)", 103)
-        );
-        address WETH = abi.decode(result0, (address));
-        bytes memory path = mergeBytes(
-            mergeBytes(
-                mergeBytes(
-                    mergeBytes(addressToBytes(_fromToken), uintToBytes(500)),
-                    addressToBytes(WETH)
-                ),
-                uintToBytes(500)
-            ),
-            addressToBytes(_toToken)
-        );
-        uint256 deadline = block.timestamp + 15;
-        return ExactInputParams(path, _to, deadline, _amountIn, 1);
-    }
-
-    function mergeBytes(bytes memory a, bytes memory b) internal pure returns (bytes memory c) {
-        uint alen = a.length;
-        uint totallen = alen + b.length;
-        uint loopsa = (a.length + 31) / 32;
-        uint loopsb = (b.length + 31) / 32;
-        assembly {
-            let m := mload(0x40)
-            mstore(m, totallen)
-            for {
-                let i := 0
-            } lt(i, loopsa) {
-                i := add(1, i)
-            } {
-                mstore(add(m, mul(32, add(1, i))), mload(add(a, mul(32, add(1, i)))))
-            }
-            for {
-                let i := 0
-            } lt(i, loopsb) {
-                i := add(1, i)
-            } {
-                mstore(add(m, add(mul(32, add(1, i)), alen)), mload(add(b, mul(32, add(1, i)))))
-            }
-            mstore(0x40, add(m, add(32, totallen)))
-            c := m
-        }
     }
 
     function checkFee(uint count) internal {
@@ -213,13 +159,5 @@ contract Commander is WrapAddresses {
         (, bytes memory result4) = poolAddr.staticcall(abi.encodeWithSignature("slot0()"));
         uint sqrtPriceX96 = abi.decode(result4, (uint));
         return (sqrtPriceX96 * sqrtPriceX96 * 1e6) >> (96 * 2);
-    }
-
-    function addressToBytes(address a) private pure returns (bytes memory) {
-        return abi.encodePacked(a);
-    }
-
-    function uintToBytes(uint24 a) private pure returns (bytes memory) {
-        return abi.encodePacked(a);
     }
 }
