@@ -68,7 +68,7 @@ contract KLA_SubscriptionCommander is Subscription, KLA_Commander {
         emit giveEvent(address(this), msg.sender, toAddr);
     }
 
-    function requestRefund() external canUse blockReEntry {
+    function requestRefund() external canUse blockReEntry haltInEmergency requestLimit(1 minutes) {
         uint refundValue = 0;
         if (isLive == 0) {
             if (block.timestamp < packInfo.times2) {

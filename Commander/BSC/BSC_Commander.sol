@@ -3,9 +3,12 @@ pragma solidity ^0.8.7;
 
 import "../../Storage/WrapAddresses.sol";
 import "../../Library/AggregatorV3Interface.sol";
+import "../EmergencyStop.sol";
 
 contract Commander is WrapAddresses {
     AggregatorV3Interface internal priceFeed;
+    IEmergencyStop internal contractStop;
+    uint private reqeustTime = block.timestamp;
     bool private reEntry = false;
 
     event giveEvent(address indexed pack, address fromAddr, address[] toAddr);
@@ -18,11 +21,25 @@ contract Commander is WrapAddresses {
         reEntry = false;
     }
 
+    modifier haltInEmergency() {
+        require(!contractStop.getContractStopped(), "function not allowed");
+        _;
+    }
+
+    modifier requestLimit(uint t) {
+        require(block.timestamp >= reqeustTime, "Too many request");
+        reqeustTime = block.timestamp + t;
+        _;
+    }
+
     constructor() {
         // Data Feeds Addresses : https://docs.chain.link/docs/reference-contracts
         address dataFeedAddress = 0x2514895c72f50D8bd4B4F9b1110F0D6bD2c97526;
         priceFeed = AggregatorV3Interface(dataFeedAddress);
         emit getChainlinkDataFeedAddressEvent(dataFeedAddress);
+
+        // Need to change when deploying this contract
+        contractStop = IEmergencyStop(0x5B38Da6a701c568545dCfcB03FcB875f56beddC4);
     }
 
     function getCountFee(uint count) external view returns (uint256) {

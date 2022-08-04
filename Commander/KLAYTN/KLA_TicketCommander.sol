@@ -70,7 +70,13 @@ contract KLA_TicketCommander is Ticket, KLA_Commander {
         emit useEvent(address(this), msg.sender, _count);
     }
 
-    function requestRefund(uint32 _count) external canUse(_count) blockReEntry {
+    function requestRefund(uint32 _count)
+        external
+        canUse(_count)
+        blockReEntry
+        haltInEmergency
+        requestLimit(1 minutes)
+    {
         uint256 refundValue = 0;
         buyList[msg.sender].hasCount = buyList[msg.sender].hasCount - _count;
         if (block.timestamp < packInfo.times1) {
@@ -78,8 +84,8 @@ contract KLA_TicketCommander is Ticket, KLA_Commander {
         }
         if (block.timestamp > packInfo.times2 && block.timestamp < packInfo.times3) {
             // in useTime
-            (refundValue) = _refund(msg.sender, packInfo.price * _count);
             totalUsedCount = totalUsedCount + _count;
+            (refundValue) = _refund(msg.sender, packInfo.price * _count);
         } else if (block.timestamp > packInfo.times3) {
             // out useTime
             uint totalValue = packInfo.price * _count;
@@ -93,8 +99,8 @@ contract KLA_TicketCommander is Ticket, KLA_Commander {
         require(isCalculated == 0, "CT03");
         uint quantityCount = packInfo.total - quantity - totalUsedCount;
         uint qunaityValue = _percentValue(packInfo.price, packInfo.noshowValue) * quantityCount;
-        _transfer(packInfo.tokenType, owner, qunaityValue);
         isCalculated = 1;
+        _transfer(packInfo.tokenType, owner, qunaityValue);
         emit calculateEvent(address(this), owner, qunaityValue);
     }
 

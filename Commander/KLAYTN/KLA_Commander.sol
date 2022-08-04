@@ -2,8 +2,11 @@
 pragma solidity >=0.8.0;
 
 import "../../Storage/WrapAddresses.sol";
+import "../EmergencyStop.sol";
 
 contract KLA_Commander is WrapAddresses {
+    IEmergencyStop internal contractStop;
+    uint private reqeustTime = block.timestamp;
     bool private reEntry = false;
 
     event giveEvent(address indexed pack, address fromAddr, address[] toAddr);
@@ -13,6 +16,22 @@ contract KLA_Commander is WrapAddresses {
         reEntry = true;
         _;
         reEntry = false;
+    }
+
+    modifier haltInEmergency() {
+        require(!contractStop.getContractStopped(), "function not allowed");
+        _;
+    }
+
+    modifier requestLimit(uint t) {
+        require(block.timestamp >= reqeustTime, "Too many request");
+        reqeustTime = block.timestamp + t;
+        _;
+    }
+
+    constructor() {
+        // Need to change when deploying this contract
+        contractStop = IEmergencyStop(0x5B38Da6a701c568545dCfcB03FcB875f56beddC4);
     }
 
     function getCountFee(uint count) external view returns (uint256) {
