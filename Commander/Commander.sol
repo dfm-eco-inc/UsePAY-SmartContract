@@ -81,11 +81,7 @@ contract Commander is WrapAddresses {
         if (tokenType == 100) {
             payable(_to).transfer(value);
         } else {
-            (bool success0, bytes memory tokenResult) = address(iAddresses).staticcall(
-                abi.encodeWithSignature("viewAddress(uint16)", uint16(tokenType))
-            );
-            require(success0, "0");
-            (bool success, ) = address(abi.decode(tokenResult, (address))).call(
+            (bool success, ) = getAddress(tokenType).call(
                 abi.encodeWithSignature("transfer(address,uint256)", _to, value)
             );
             require(success, "TOKEN transfer Fail");
@@ -97,29 +93,16 @@ contract Commander is WrapAddresses {
         if (tokenType == 100) {
             balance = address(this).balance;
         } else {
-            (, bytes memory tokenResult) = address(iAddresses).staticcall(
-                abi.encodeWithSignature("viewAddress(uint16)", uint16(tokenType))
-            );
-            (, bytes memory result) = address(abi.decode(tokenResult, (address))).staticcall(
-                abi.encodeWithSignature("balanceOf(address)", address(this))
-            );
-            balance = abi.decode(result, (uint256));
+            balance = getBalance(getAddress(tokenType));
         }
         return balance;
     }
 
     function _swap(address _to, uint256 amountIn) internal returns (uint256) {
-        (, bytes memory result0) = address(iAddresses).staticcall(
-            abi.encodeWithSignature("viewAddress(uint16)", 1200)
-        );
-        address routerAddr = abi.decode(result0, (address));
-        (, bytes memory resultDFM) = address(iAddresses).staticcall(
-            abi.encodeWithSignature("viewAddress(uint16)", 101)
-        );
-        (bool success, bytes memory result) = address(routerAddr).call{value: amountIn}(
+        (bool success, bytes memory result) = getAddress(1200).call{value: amountIn}(
             abi.encodeWithSignature(
                 "exactInputSingle((address,address,uint24,address,uint256,uint256,uint256,uint160))",
-                getExactInputSigleParams(_to, amountIn, abi.decode(resultDFM, (address)))
+                getExactInputSigleParams(_to, amountIn, getAddress(101))
             )
         );
         require(success, "swap ETH->TOKEN fail");
@@ -132,18 +115,13 @@ contract Commander is WrapAddresses {
         uint256 _amountIn,
         address _tokenAddr
     ) internal view returns (ExactInputSingleParams memory) {
-        (, bytes memory result0) = address(iAddresses).staticcall(
-            abi.encodeWithSignature("viewAddress(uint16)", 103)
-        );
-        address WETH = abi.decode(result0, (address));
-        uint256 deadline = block.timestamp + 15;
         return
             ExactInputSingleParams(
-                WETH,
+                getAddress(103), // WETH
                 _tokenAddr,
                 500, // fee
                 _to,
-                deadline,
+                block.timestamp + 15, // daedline
                 _amountIn,
                 0, // amountOutMin
                 0 // sqrtPriceLimitX96
@@ -161,5 +139,21 @@ contract Commander is WrapAddresses {
         } else {
             require(msg.value > getPrice(), "C01");
         }
+    }
+
+    function getBalance(address addr) internal view returns (uint256) {
+        (bool success, bytes memory balanceBytes) = addr.staticcall(
+            abi.encodeWithSignature("balanceOf(address)", address(this))
+        );
+        require(success, "Get balance failed");
+        return abi.decode(balanceBytes, (uint256));
+    }
+
+    function getAddress(uint16 index) internal view returns (address) {
+        (bool success, bytes memory addressBytes) = address(iAddresses).staticcall(
+            abi.encodeWithSignature("viewAddress(uint16)", uint16(index))
+        );
+        require(success, "Get address failed");
+        return abi.decode(addressBytes, (address));
     }
 }

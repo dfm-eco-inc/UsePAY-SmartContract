@@ -17,10 +17,7 @@ contract KLA_CouponCommander is KLA_Commander, Coupon {
         require(_count <= 1000, "C05");
         if (_count > packInfo.total) {
             checkFee(_count - packInfo.total);
-            (, bytes memory result0) = address(iAddresses).staticcall(
-                abi.encodeWithSignature("viewAddress(uint16)", 0)
-            );
-            _transfer(100, abi.decode(result0, (address)), msg.value);
+            _transfer(100, getAddress(0), msg.value);
             quantity = quantity + (_count - packInfo.total);
         } else {
             quantity = quantity - (packInfo.total - _count);

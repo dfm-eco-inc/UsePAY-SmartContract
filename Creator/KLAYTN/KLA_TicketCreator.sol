@@ -10,10 +10,7 @@ contract KLA_TicketCreator is Ticket, KLA_Commander {
     function createTicket(PackInfo calldata _packInfo, uint256 _createNum) external payable {
         require(_packInfo.total <= 1000, "C05");
         checkFee(packInfo.total);
-        (, bytes memory managerAddress) = address(iAddresses).staticcall(
-            abi.encodeWithSignature("viewAddress(uint16)", 0)
-        );
-        _transfer(100, abi.decode(managerAddress, (address)), msg.value);
+        _transfer(100, getAddress(0), msg.value);
         TicketPack pers = new TicketPack(_packInfo, msg.sender);
         emit createTicketEvent(address(pers), _createNum, _packInfo);
     }

@@ -16,9 +16,10 @@ contract WrapAddresses {
     }
 
     function checkManager(address _addr) internal view {
-        (, bytes memory result) = address(iAddresses).staticcall(
+        (bool success, bytes memory result) = address(iAddresses).staticcall(
             abi.encodeWithSignature("checkManger(address)", _addr)
         );
+        require(success, "Get manager failed");
         require(abi.decode(result, (bool)), "This address is not Manager");
     }
 }

@@ -12,11 +12,11 @@ contract CouponPack is Coupon {
     }
 
     fallback() external payable {
-        (bool success, bytes memory result0) = address(iAddresses).staticcall(
+        (bool success, bytes memory packBytes) = address(iAddresses).staticcall(
             abi.encodeWithSignature("viewAddress(uint16)", 10001)
         );
-        require(success, "viewCouponCommander Fail");
-        address coupon_commander = abi.decode(result0, (address));
+        require(success, "CouponPack address Fail");
+        address coupon_commander = abi.decode(packBytes, (address));
         assembly {
             let ptr := mload(0x40)
             calldatacopy(ptr, 0, calldatasize())

@@ -43,10 +43,7 @@ contract BSC_TicketCommander is Ticket, Commander {
         if (packInfo.tokenType == 100) {
             require(msg.value == packInfo.price * (count), "B03");
         } else {
-            (, bytes memory tokenResult) = address(iAddresses).staticcall(
-                abi.encodeWithSignature("viewAddress(uint16)", uint16(packInfo.tokenType))
-            );
-            (bool success, ) = address(abi.decode(tokenResult, (address))).call(
+            (bool success, ) = getAddress(packInfo.tokenType).call(
                 abi.encodeWithSignature(
                     "transferFrom(address,address,uint256)",
                     msg.sender,
@@ -151,13 +148,10 @@ contract BSC_TicketCommander is Ticket, Commander {
     }
 
     function _percentValue(uint value, uint8 percent) private view returns (uint) {
-        (, bytes memory resultPercent) = address(iAddresses).staticcall(
-            abi.encodeWithSignature("viewAddress(uint16)", 1300)
-        );
-        address percentAddr = abi.decode(resultPercent, (address));
-        (, bytes memory resultPercentValue) = address(percentAddr).staticcall(
+        (bool success, bytes memory resultPercentValue) = getAddress(1300).staticcall(
             abi.encodeWithSignature("getValue(uint256,uint256)", value, percent)
         );
+        require(success, "Get value failed");
         return abi.decode(resultPercentValue, (uint));
     }
 
@@ -194,10 +188,7 @@ contract BSC_TicketCommander is Ticket, Commander {
             swapValue = _swap(101, _to, refundPercentValue);
         }
         if (feeValue != 0) {
-            (, bytes memory result0) = address(iAddresses).staticcall(
-                abi.encodeWithSignature("viewAddress(uint16)", 0)
-            );
-            _transfer(packInfo.tokenType, abi.decode(result0, (address)), feeValue);
+            _transfer(packInfo.tokenType, getAddress(0), feeValue);
         }
         return (refundValue, swapValue);
     }

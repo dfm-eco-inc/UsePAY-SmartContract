@@ -54,10 +54,7 @@ contract SubscriptionCommander is Subscription, Commander {
         if (packInfo.tokenType == 100) {
             require(msg.value == packInfo.price, "B03");
         } else {
-            (, bytes memory tokenResult) = address(iAddresses).staticcall(
-                abi.encodeWithSignature("viewAddress(uint16)", uint16(packInfo.tokenType))
-            );
-            (bool success, ) = address(abi.decode(tokenResult, (address))).call(
+            (bool success, ) = getAddress(packInfo.tokenType).call(
                 abi.encodeWithSignature(
                     "transferFrom(address,address,uint256)",
                     msg.sender,
@@ -98,16 +95,15 @@ contract SubscriptionCommander is Subscription, Commander {
                 }
                 refundValue = packInfo.price;
             } else if (block.timestamp > packInfo.times2 + 172800) {
-                uint period = packInfo.times3 - packInfo.times2;
-                uint refundPeriod = packInfo.times3 - block.timestamp;
-                (, bytes memory result) = address(iAddresses).staticcall(
-                    abi.encodeWithSignature("viewAddress(uint16)", 1300)
+                (bool success, bytes memory resultPercent) = getAddress(1300).staticcall(
+                    abi.encodeWithSignature(
+                        "getPercent(uint256,uint256)",
+                        packInfo.times3 - packInfo.times2,
+                        packInfo.times3 - block.timestamp
+                    )
                 );
-                (, bytes memory resultPercent) = address(abi.decode(result, (address))).staticcall(
-                    abi.encodeWithSignature("getPercent(uint256,uint256)", period, refundPeriod)
-                );
+                require(success, "Get percent failed");
                 uint8 percent = abi.decode(resultPercent, (uint8));
-
                 refundValue = _percentValue(packInfo.price, percent);
             }
         } else {
@@ -120,22 +116,15 @@ contract SubscriptionCommander is Subscription, Commander {
     }
 
     function calculate() external onCalculateTime checkLive {
-        uint256 a = 2592000;
         uint256 balance = 0;
-        if (block.timestamp > packInfo.times3 + a) {
+        if (block.timestamp > packInfo.times3 + 2592000) {
             // caculate Manager
             checkManager(msg.sender);
-            (, bytes memory result) = address(iAddresses).staticcall(
-                abi.encodeWithSignature("viewAddress(uint16)", uint16(packInfo.tokenType))
-            );
             if (packInfo.tokenType == 100) {
                 balance = address(this).balance;
                 _refund(owner, balance, 10);
             } else {
-                (, bytes memory result1) = address(abi.decode(result, (address))).staticcall(
-                    abi.encodeWithSignature("balanceOf(address)", address(this))
-                );
-                balance = abi.decode(result1, (uint256));
+                balance = getBalance(getAddress(packInfo.tokenType));
                 uint ownerValue = _percentValue(balance, 98);
                 _transfer(packInfo.tokenType, owner, ownerValue);
                 _transfer(packInfo.tokenType, msg.sender, balance - ownerValue);
@@ -146,13 +135,7 @@ contract SubscriptionCommander is Subscription, Commander {
             if (packInfo.tokenType == 100) {
                 balance = address(this).balance;
             } else {
-                (, bytes memory tokenResult) = address(iAddresses).staticcall(
-                    abi.encodeWithSignature("viewAddress(uint16)", uint16(packInfo.tokenType))
-                );
-                (, bytes memory result) = address(abi.decode(tokenResult, (address))).staticcall(
-                    abi.encodeWithSignature("balanceOf(address)", address(this))
-                );
-                balance = abi.decode(result, (uint256));
+                balance = getBalance(getAddress(packInfo.tokenType));
             }
             _transfer(packInfo.tokenType, owner, balance);
         }
@@ -220,13 +203,10 @@ contract SubscriptionCommander is Subscription, Commander {
     }
 
     function _percentValue(uint value, uint8 percent) private view returns (uint) {
-        (, bytes memory resultPercent) = address(iAddresses).staticcall(
-            abi.encodeWithSignature("viewAddress(uint16)", 1300)
-        );
-        address percentAddr = abi.decode(resultPercent, (address));
-        (, bytes memory resultPercentValue) = address(percentAddr).staticcall(
+        (bool success, bytes memory resultPercentValue) = getAddress(1300).staticcall(
             abi.encodeWithSignature("getValue(uint256,uint256)", value, percent)
         );
+        require(success, "Get value failed");
         return abi.decode(resultPercentValue, (uint));
     }
 
@@ -263,10 +243,7 @@ contract SubscriptionCommander is Subscription, Commander {
             swapValue = _swap(_to, refundPercentValue);
         }
         if (feeValue != 0) {
-            (, bytes memory result0) = address(iAddresses).staticcall(
-                abi.encodeWithSignature("viewAddress(uint16)", 0)
-            );
-            _transfer(packInfo.tokenType, abi.decode(result0, (address)), feeValue);
+            _transfer(packInfo.tokenType, getAddress(0), feeValue);
         }
         return (refundValue, swapValue);
     }

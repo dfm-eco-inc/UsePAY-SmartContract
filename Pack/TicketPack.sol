@@ -12,10 +12,11 @@ contract TicketPack is Ticket {
     }
 
     fallback() external payable {
-        (, bytes memory result0) = address(iAddresses).staticcall(
+        (bool success, bytes memory packBytes) = address(iAddresses).staticcall(
             abi.encodeWithSignature("viewAddress(uint16)", 10000)
         );
-        address tikcet_commander = abi.decode(result0, (address));
+        require(success, "TicketPack address Fail");
+        address tikcet_commander = abi.decode(packBytes, (address));
         assembly {
             let ptr := mload(0x40)
             calldatacopy(ptr, 0, calldatasize())

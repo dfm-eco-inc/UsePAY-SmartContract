@@ -48,24 +48,15 @@ contract KLA_Commander is WrapAddresses {
     }
 
     function getPrice() public view returns (uint256) {
-        (bool success0, bytes memory resultPool) = address(iAddresses).staticcall(
-            abi.encodeWithSignature("viewAddress(uint16)", 1202)
-        );
-        require(success0, "0");
-        address klaySwapPool = abi.decode(resultPool, (address));
-        (bool success1, bytes memory usdtResult) = address(iAddresses).staticcall(
-            abi.encodeWithSignature("viewAddress(uint16)", 506)
-        );
-        require(success1, "1");
-        (bool success2, bytes memory data) = address(klaySwapPool).staticcall(
+        (bool success, bytes memory priceBytes) = getAddress(1202).staticcall(
             abi.encodeWithSignature(
                 "estimatePos(address,uint256)",
-                abi.decode(usdtResult, (address)),
+                getAddress(506), // USDT
                 1000000
             )
         );
-        require(success2, "2");
-        return abi.decode(data, (uint));
+        require(success, "estimatePos failed");
+        return abi.decode(priceBytes, (uint));
     }
 
     function _transfer(
@@ -76,11 +67,7 @@ contract KLA_Commander is WrapAddresses {
         if (tokenType == 100) {
             payable(_to).transfer(value);
         } else {
-            (bool success0, bytes memory tokenResult) = address(iAddresses).staticcall(
-                abi.encodeWithSignature("viewAddress(uint16)", uint16(tokenType))
-            );
-            require(success0, "0");
-            (bool success, ) = address(abi.decode(tokenResult, (address))).call(
+            (bool success, ) = getAddress(tokenType).call(
                 abi.encodeWithSignature("transfer(address,uint256)", _to, value)
             );
             require(success, "TOKEN transfer Fail");
@@ -92,13 +79,7 @@ contract KLA_Commander is WrapAddresses {
         if (tokenType == 100) {
             balance = address(this).balance;
         } else {
-            (, bytes memory tokenResult) = address(iAddresses).staticcall(
-                abi.encodeWithSignature("viewAddress(uint16)", uint16(tokenType))
-            );
-            (, bytes memory result) = address(abi.decode(tokenResult, (address))).staticcall(
-                abi.encodeWithSignature("balanceOf(address)", address(this))
-            );
-            balance = abi.decode(result, (uint256));
+            balance = getBalance(getAddress(tokenType));
         }
         return balance;
     }
@@ -114,5 +95,21 @@ contract KLA_Commander is WrapAddresses {
         } else {
             require(msg.value > getPrice(), "C01");
         }
+    }
+
+    function getBalance(address addr) internal view returns (uint256) {
+        (bool success, bytes memory balanceBytes) = addr.staticcall(
+            abi.encodeWithSignature("balanceOf(address)", address(this))
+        );
+        require(success, "Get balance failed");
+        return abi.decode(balanceBytes, (uint256));
+    }
+
+    function getAddress(uint16 index) internal view returns (address) {
+        (bool success, bytes memory addressBytes) = address(iAddresses).staticcall(
+            abi.encodeWithSignature("viewAddress(uint16)", uint16(index))
+        );
+        require(success, "Get address failed");
+        return abi.decode(addressBytes, (address));
     }
 }
