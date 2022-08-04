@@ -133,7 +133,6 @@ contract KLA_SubscriptionCommander is Subscription, KLA_Commander {
     function noShowRefund(address[] calldata _addrList) external onlyManager(msg.sender) {
         require(isLive == 1, "N02");
         require(block.timestamp > noShowTime + 15552000, "N03");
-        // require(block.timestamp > noShowTime + 300,"N03");
         uint256[] memory values = new uint256[](_addrList.length);
         uint refundValue = _percentValue(packInfo.price, 95);
         for (uint i = 0; i < _addrList.length; i++) {
