@@ -11,11 +11,11 @@ interface IEmergencyStop {
 contract EmergencyStop is WrapAddresses {
     bool private contractStopped = false;
 
-    function toggleContractStopped() public onlyManager(msg.sender) {
+    function toggleContractStopped() external onlyManager(msg.sender) {
         contractStopped = !contractStopped;
     }
 
-    function getContractStopped() public view returns (bool) {
+    function getContractStopped() external view returns (bool) {
         return contractStopped;
     }
 }
