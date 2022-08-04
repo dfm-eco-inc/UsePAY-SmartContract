@@ -35,6 +35,11 @@ contract TicketCommander is Ticket, Commander {
     modifier canBuy(uint256 count) {
         require(block.timestamp >= packInfo.times0 && block.timestamp <= packInfo.times1, "B01");
         require(quantity - count >= 0, "B04");
+        require(count <= packInfo.maxCount, "B05");
+        _;
+    }
+
+    function buy(uint32 count, uint256 buyNum) external payable canBuy(count) {
         if (packInfo.tokenType == 100) {
             require(msg.value == packInfo.price * (count), "B03");
         } else {
@@ -51,11 +56,6 @@ contract TicketCommander is Ticket, Commander {
             );
             require(success, "T01");
         }
-        _;
-    }
-
-    function buy(uint32 count, uint256 buyNum) external payable canBuy(count) {
-        require(count <= packInfo.maxCount, "B05");
         _buy(count, msg.sender);
         emit buyEvent(address(this), buyNum, msg.sender, count);
     }

@@ -26,6 +26,20 @@ contract KLA_SubscriptionCommander is Subscription, KLA_Commander {
         require(buyList[msg.sender].hasCount == 0, "B00");
         require(block.timestamp >= packInfo.times0 && block.timestamp <= packInfo.times1, "B01");
         require(quantity > 0, "B04");
+        _;
+    }
+
+    modifier canUse() {
+        require(buyList[msg.sender].hasCount > 0, "U02");
+        _;
+    }
+
+    modifier checkLive() {
+        require(isLive == 0, "N01");
+        _;
+    }
+
+    function buy(uint256 buyNum) external payable canBuy checkLive {
         if (packInfo.tokenType == 100) {
             require(msg.value == packInfo.price, "B03");
         } else {
@@ -42,20 +56,6 @@ contract KLA_SubscriptionCommander is Subscription, KLA_Commander {
             );
             require(success, "T01");
         }
-        _;
-    }
-
-    modifier canUse() {
-        require(buyList[msg.sender].hasCount > 0, "U02");
-        _;
-    }
-
-    modifier checkLive() {
-        require(isLive == 0, "N01");
-        _;
-    }
-
-    function buy(uint256 buyNum) external payable canBuy checkLive {
         _buy(msg.sender);
         emit buyEvent(address(this), buyNum, msg.sender);
     }
