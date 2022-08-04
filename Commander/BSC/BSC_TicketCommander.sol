@@ -115,18 +115,19 @@ contract BSC_TicketCommander is Ticket, Commander {
         emit calculateEvent(address(this), owner, qunaityValue);
     }
 
-    function changeTotal(uint32 _count) external payable onlyOwner {
-        require(packInfo.total - quantity <= _count, "TC01 - Less than the remaining quantity");
-        require(_count <= 1000, "C05 - Limit count over");
-        if (_count > packInfo.total) {
-            checkFee(_count - packInfo.total);
+    function changeTotal(uint32 count) external payable onlyOwner {
+        require(packInfo.total - quantity <= count, "TC01 - Less than the remaining quantity");
+        require(count <= 1000, "C05 - Limit count over");
+
+        if (count > packInfo.total) {
+            checkFee(count - packInfo.total);
             _swap(101, msg.sender, msg.value);
-            quantity = quantity + (_count - packInfo.total);
-        } else {
-            quantity = quantity - (packInfo.total - _count);
         }
-        emit changeTotalEvent(address(this), packInfo.total, _count);
-        packInfo.total = _count;
+
+        quantity = quantity - (packInfo.total - count);
+        packInfo.total = count;
+
+        emit changeTotalEvent(address(this), packInfo.total, count);
     }
 
     function viewInfo() external view returns (PackInfo memory) {
