@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GNU LGPLv3
-pragma solidity >=0.7.0;
+pragma solidity >=0.8.0;
 
 contract WrapAddresses {
     // address internal iAddresses = 0x30BafbA23f24d386a39210280590B0346c0dfd92; // UsePAY_eth_rinkeby
