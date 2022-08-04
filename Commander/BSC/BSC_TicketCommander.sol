@@ -116,7 +116,7 @@ contract BSC_TicketCommander is Ticket, Commander {
     }
 
     function changeTotal(uint32 _count) external payable onlyOwner {
-        require(packInfo.total - quantity <= _count, "TC01 - Count smaller than before");
+        require(packInfo.total - quantity <= _count, "TC01 - Less than the remaining quantity");
         require(_count <= 1000, "C05 - Limit count over");
         if (_count > packInfo.total) {
             checkFee(_count - packInfo.total);
