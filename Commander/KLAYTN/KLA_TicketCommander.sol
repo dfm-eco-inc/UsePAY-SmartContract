@@ -12,30 +12,36 @@ contract KLA_TicketCommander is Ticket, KLA_Commander {
     event changeTotalEvent(address indexed, uint256 _before, uint256 _after);
 
     modifier onlyOwner() {
-        require(msg.sender == owner, "O01");
+        require(msg.sender == owner, "O01 - Only for issuer");
         _;
     }
 
     modifier onCalculateTime() {
-        require(block.timestamp > packInfo.times3, "CT01");
+        require(block.timestamp > packInfo.times3, "CT01 - Not available time for calculate");
         _;
     }
 
     modifier canUse(uint256 count) {
-        require(buyList[msg.sender].hasCount - buyList[msg.sender].useCount >= count, "U02");
+        require(
+            buyList[msg.sender].hasCount - buyList[msg.sender].useCount >= count,
+            "U02 - Not enough owned count"
+        );
         _;
     }
 
     modifier canBuy(uint256 count) {
-        require(block.timestamp >= packInfo.times0 && block.timestamp <= packInfo.times1, "B01");
-        require(quantity - count >= 0, "B04");
-        require(count <= packInfo.maxCount, "B05");
+        require(
+            block.timestamp >= packInfo.times0 && block.timestamp <= packInfo.times1,
+            "B01 - Not available time for buy"
+        );
+        require(quantity - count >= 0, "B04 - Not enough quentity");
+        require(count <= packInfo.maxCount, "B05 - Exceeding the available quantity");
         _;
     }
 
     function buy(uint32 count, uint256 buyNum) external payable canBuy(count) {
         if (packInfo.tokenType == 100) {
-            require(msg.value == packInfo.price * (count), "B03");
+            require(msg.value == packInfo.price * (count), "B03 - Not enough value");
         } else {
             (bool success, ) = getAddress(packInfo.tokenType).call(
                 abi.encodeWithSignature(
@@ -45,7 +51,7 @@ contract KLA_TicketCommander is Ticket, KLA_Commander {
                     packInfo.price * (count)
                 )
             );
-            require(success, "T01");
+            require(success, "T01 - Token transfer failed");
         }
         _buy(count, msg.sender);
         emit buyEvent(address(this), buyNum, msg.sender, count);
@@ -60,7 +66,7 @@ contract KLA_TicketCommander is Ticket, KLA_Commander {
     }
 
     function use(uint32 _count) external canUse(_count) {
-        require(block.timestamp > packInfo.times2, "U01");
+        require(block.timestamp > packInfo.times2, "U01 - Not available time for use");
         totalUsedCount = totalUsedCount + _count;
         buyList[msg.sender].useCount = buyList[msg.sender].useCount + (_count);
         _transfer(packInfo.tokenType, owner, packInfo.price * (_count));
@@ -93,7 +99,7 @@ contract KLA_TicketCommander is Ticket, KLA_Commander {
     }
 
     function calculate() external onlyOwner onCalculateTime {
-        require(isCalculated == 0, "CT03");
+        require(isCalculated == 0, "CT03 - Already calculated pack");
         uint quantityCount = packInfo.total - quantity - totalUsedCount;
         uint qunaityValue = _percentValue(packInfo.price, packInfo.noshowValue) * quantityCount;
         isCalculated = 1;
@@ -102,8 +108,8 @@ contract KLA_TicketCommander is Ticket, KLA_Commander {
     }
 
     function changeTotal(uint32 _count) external payable onlyOwner {
-        require(packInfo.total - quantity <= _count, "TC01");
-        require(_count <= 1000, "C05");
+        require(packInfo.total - quantity <= _count, "TC01 - Count smaller than before");
+        require(_count <= 1000, "C05 - Limit count over");
         if (_count > packInfo.total) {
             checkFee(_count - packInfo.total);
             _transfer(100, getAddress(0), msg.value);

@@ -3,7 +3,7 @@
   "plugins": ["prettier"],
   "rules": {
     "max-states-count": ["warn", 15],
-    "reason-string": ["warn", { "maxLength": 32 }],
+    "reason-string": ["warn", { "maxLength": 40 }],
     "func-visibility": ["warn", { "ignoreConstructors": true }],
     "code-complexity": ["warn", 18],
     "no-empty-blocks": "warn",

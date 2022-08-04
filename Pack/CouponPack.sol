@@ -5,7 +5,7 @@ import "./Pack.sol";
 
 contract CouponPack is Coupon {
     constructor(PackInfo memory _packInfo, address _owner) {
-        require(_owner != address(0), "AD01");
+        require(_owner != address(0), "AD01 - Not available for manager");
         packInfo = _packInfo;
         owner = _owner;
         quantity = _packInfo.total;

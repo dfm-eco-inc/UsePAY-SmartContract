@@ -8,13 +8,13 @@ contract KLA_CouponCommander is KLA_Commander, Coupon {
     event changeTotalEvent(address indexed, uint256 _before, uint256 _after);
 
     modifier onlyOwner() {
-        require(msg.sender == owner, "O01");
+        require(msg.sender == owner, "O01 - Only for issuer");
         _;
     }
 
     function changeTotal(uint32 _count) external payable onlyOwner {
-        require(packInfo.total - quantity <= _count, "TC01");
-        require(_count <= 1000, "C05");
+        require(packInfo.total - quantity <= _count, "TC01 - Count smaller than before");
+        require(_count <= 1000, "C05 - Limit count over");
         if (_count > packInfo.total) {
             checkFee(_count - packInfo.total);
             _transfer(100, getAddress(0), msg.value);

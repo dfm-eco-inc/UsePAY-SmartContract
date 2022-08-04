@@ -91,9 +91,9 @@ contract KLA_Commander is WrapAddresses {
                 count = count / 10;
                 n++;
             }
-            require(msg.value > getPrice() * n * 5, "C01");
+            require(msg.value > getPrice() * n * 5, "C01 - Not enough fee");
         } else {
-            require(msg.value > getPrice(), "C01");
+            require(msg.value > getPrice(), "C01 - Not enough fee");
         }
     }
 

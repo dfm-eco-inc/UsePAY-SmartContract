@@ -24,35 +24,38 @@ contract SubscriptionCommander is Subscription, Commander {
     );
 
     modifier onlyOwner() {
-        require(msg.sender == owner, "O01");
+        require(msg.sender == owner, "O01 - Only for issuer");
         _;
     }
 
     modifier onCalculateTime() {
-        require(block.timestamp > packInfo.times3, "CT01");
+        require(block.timestamp > packInfo.times3, "CT01 - Not available time for calculate");
         _;
     }
 
     modifier canBuy() {
-        require(buyList[msg.sender].hasCount == 0, "B00");
-        require(block.timestamp >= packInfo.times0 && block.timestamp <= packInfo.times1, "B01");
-        require(quantity > 0, "B04");
+        require(buyList[msg.sender].hasCount == 0, "B00 - Already bought pack");
+        require(
+            block.timestamp >= packInfo.times0 && block.timestamp <= packInfo.times1,
+            "B01 - Not available time for buy"
+        );
+        require(quantity > 0, "B04 - Not enough quentity");
         _;
     }
 
     modifier canUse() {
-        require(buyList[msg.sender].hasCount > 0, "U02");
+        require(buyList[msg.sender].hasCount > 0, "U02 - Not enough owned count");
         _;
     }
 
     modifier checkLive() {
-        require(isLive == 0, "N01");
+        require(isLive == 0, "N01 - Disabled pack");
         _;
     }
 
     function buy(uint256 buyNum) external payable canBuy checkLive {
         if (packInfo.tokenType == 100) {
-            require(msg.value == packInfo.price, "B03");
+            require(msg.value == packInfo.price, "B03 - Not enough value");
         } else {
             (bool success, ) = getAddress(packInfo.tokenType).call(
                 abi.encodeWithSignature(
@@ -62,7 +65,7 @@ contract SubscriptionCommander is Subscription, Commander {
                     packInfo.price
                 )
             );
-            require(success, "T01");
+            require(success, "T01 - Token transfer failed");
         }
         _buy(msg.sender);
         emit buyEvent(address(this), buyNum, msg.sender);
@@ -107,7 +110,10 @@ contract SubscriptionCommander is Subscription, Commander {
                 refundValue = _percentValue(packInfo.price, percent);
             }
         } else {
-            require(block.timestamp <= noShowTime + 15552000, "N04");
+            require(
+                block.timestamp <= noShowTime + 15552000,
+                "N04 - Not available time for refund"
+            );
             refundValue = packInfo.price;
         }
         buyList[msg.sender].hasCount--;
@@ -143,8 +149,8 @@ contract SubscriptionCommander is Subscription, Commander {
     }
 
     function noShowRefund(address[] calldata _addrList) external onlyManager(msg.sender) {
-        require(isLive == 1, "N02");
-        require(block.timestamp > noShowTime + 15552000, "N03");
+        require(isLive == 1, "N02 - Not disabled pack");
+        require(block.timestamp > noShowTime + 15552000, "N03 - Not available time for refund");
         uint256[] memory values = new uint256[](_addrList.length);
         uint256[] memory swaps = new uint256[](_addrList.length);
         uint refundValue = _percentValue(packInfo.price, 95);
@@ -160,8 +166,8 @@ contract SubscriptionCommander is Subscription, Commander {
     }
 
     function changeTotal(uint32 _count) external payable onlyOwner {
-        require(packInfo.total - quantity <= _count, "TC01");
-        require(_count <= 1000, "C05");
+        require(packInfo.total - quantity <= _count, "TC01 - Count smaller than before");
+        require(_count <= 1000, "C05 - Limit count over");
         if (_count > packInfo.total) {
             checkFee(_count - packInfo.total);
             _swap(msg.sender, msg.value);
