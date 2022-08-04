@@ -186,7 +186,7 @@ contract FullMath {
 
     function mostSignificantBit(uint256 x) private pure returns (uint256) {
         unchecked {
-            require(x > 0, "x>0 Error");
+            require(x > 0, "x variable should be bigger than zero");
 
             uint256 result = 0;
 
