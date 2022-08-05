@@ -9,9 +9,12 @@ contract KLA_TicketCreator is Ticket, KLA_Commander {
 
     function createTicket(PackInfo calldata _packInfo, uint256 _createNum) external payable {
         require(_packInfo.total <= 1000, "C05 - Limit count over");
+
         checkFee(packInfo.total);
+
         _transfer(100, getAddress(0), msg.value);
         TicketPack pers = new TicketPack(_packInfo, msg.sender);
+
         emit createTicketEvent(address(pers), _createNum, _packInfo);
     }
 

@@ -65,22 +65,28 @@ contract BSC_SubscriptionCommander is Subscription, Commander {
                     packInfo.price
                 )
             );
+
             require(success, "T01 - Token transfer failed");
         }
+
         _buy(msg.sender);
+
         emit buyEvent(address(this), buyNum, msg.sender);
     }
 
     function give(address[] memory toAddr) external canUse checkLive {
         buyList[msg.sender].hasCount = buyList[msg.sender].hasCount - uint32(toAddr.length);
+
         for (uint i = 0; i < toAddr.length; i++) {
             buyList[toAddr[i]].hasCount++;
         }
+
         emit giveEvent(address(this), msg.sender, toAddr);
     }
 
     function requestRefund() external canUse blockReEntry haltInEmergency requestLimit(1 minutes) {
         uint refundValue = 0;
+
         if (isLive == 0) {
             if (block.timestamp < packInfo.times2) {
                 quantity++;
@@ -91,7 +97,9 @@ contract BSC_SubscriptionCommander is Subscription, Commander {
                 if (noshowLimit == 0) {
                     noshowLimit = _percentValue(packInfo.total - quantity, 60);
                 }
+
                 noshowCount++;
+
                 if (noshowCount >= noshowLimit) {
                     isLive = 1;
                     noShowTime = block.timestamp;
@@ -101,12 +109,14 @@ contract BSC_SubscriptionCommander is Subscription, Commander {
             } else if (block.timestamp > packInfo.times2 + 172800) {
                 (bool success, bytes memory resultPercent) = getAddress(1300).staticcall(
                     abi.encodeWithSignature(
-                        "getPercent(uint256,uint256)",
+                        "getTimePercent(uint256,uint256)",
                         packInfo.times3 - packInfo.times2,
                         packInfo.times3 - block.timestamp
                     )
                 );
-                require(success, "Get percent failed");
+
+                require(success, "Get time percent failed");
+
                 refundValue = _percentValue(packInfo.price, abi.decode(resultPercent, (uint8)));
             }
         } else {
@@ -114,35 +124,44 @@ contract BSC_SubscriptionCommander is Subscription, Commander {
                 block.timestamp <= noShowTime + 15552000,
                 "N04 - Not available time for refund"
             );
+
             refundValue = packInfo.price;
         }
+
         buyList[msg.sender].hasCount--;
         (uint value, uint swap) = _refund(msg.sender, refundValue, 0);
+
         emit requestRefundEvent(address(this), msg.sender, 1, value, swap);
     }
 
     function calculate() external onCalculateTime checkLive {
         uint256 balance = 0;
+
         if (block.timestamp > packInfo.times3 + 2592000) {
             checkManager(msg.sender);
+
             if (packInfo.tokenType == 100) {
                 balance = address(this).balance;
                 _refund(owner, balance, 10);
             } else {
                 balance = getBalance(getAddress(packInfo.tokenType));
                 uint ownerValue = _percentValue(balance, 98);
+
                 _transfer(packInfo.tokenType, owner, ownerValue);
                 _transfer(packInfo.tokenType, msg.sender, balance - ownerValue);
             }
         } else {
             require(msg.sender == owner, "you are not owner");
+
             if (packInfo.tokenType == 100) {
                 balance = address(this).balance;
             } else {
                 balance = getBalance(getAddress(packInfo.tokenType));
             }
+
             _transfer(packInfo.tokenType, owner, balance);
         }
+
         emit calculateEvent(address(this), owner, balance);
     }
 
@@ -159,6 +178,7 @@ contract BSC_SubscriptionCommander is Subscription, Commander {
             buyList[_to].hasCount--;
             (values[i], swaps[i]) = _refund(_to, refundValue, 10);
         }
+
         emit noshowRefundUser(address(this), _addrList, values, swaps);
 
         _transfer(packInfo.tokenType, msg.sender, _getBalance(packInfo.tokenType));
@@ -210,9 +230,11 @@ contract BSC_SubscriptionCommander is Subscription, Commander {
 
     function _percentValue(uint value, uint8 percent) private view returns (uint) {
         (bool success, bytes memory valueBytes) = getAddress(1300).staticcall(
-            abi.encodeWithSignature("getValue(uint256,uint256)", value, percent)
+            abi.encodeWithSignature("getValuePercent(uint256,uint256)", value, percent)
         );
-        require(success, "Get value failed");
+
+        require(success, "Get value percent failed");
+
         return abi.decode(valueBytes, (uint));
     }
 
@@ -230,8 +252,9 @@ contract BSC_SubscriptionCommander is Subscription, Commander {
         uint refundPercentValue = 0;
         uint swapValue = 0;
         uint feeValue = 0;
+
+        // is Native Token
         if (packInfo.tokenType == 100) {
-            // TOKEN == BSC
             refundValue = _percentValue(value, 100 - percent);
             refundPercentValue = value - refundValue;
         } else {
@@ -242,15 +265,19 @@ contract BSC_SubscriptionCommander is Subscription, Commander {
                 refundValue = value;
             }
         }
+
         if (refundValue != 0) {
             _transfer(packInfo.tokenType, _to, refundValue);
         }
+
         if (refundPercentValue != 0) {
             swapValue = _swap(101, _to, refundPercentValue);
         }
+
         if (feeValue != 0) {
             _transfer(packInfo.tokenType, getAddress(0), feeValue);
         }
+
         return (refundValue, swapValue);
     }
 }

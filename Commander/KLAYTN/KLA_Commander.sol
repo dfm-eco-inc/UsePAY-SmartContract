@@ -36,11 +36,13 @@ contract KLA_Commander is WrapAddresses {
 
     function getCountFee(uint count) external view returns (uint256) {
         uint8 n = 0;
+
         if (count > 10) {
             while (count >= 10) {
                 count = count / 10;
                 n++;
             }
+
             return getPrice() * n * 5;
         } else {
             return getPrice();
@@ -55,7 +57,9 @@ contract KLA_Commander is WrapAddresses {
                 1000000
             )
         );
+
         require(success, "estimatePos failed");
+
         return abi.decode(priceBytes, (uint));
     }
 
@@ -70,27 +74,32 @@ contract KLA_Commander is WrapAddresses {
             (bool success, ) = getAddress(tokenType).call(
                 abi.encodeWithSignature("transfer(address,uint256)", _to, value)
             );
+
             require(success, "TOKEN transfer Fail");
         }
     }
 
     function _getBalance(uint16 tokenType) internal view returns (uint256) {
         uint balance = 0;
+
         if (tokenType == 100) {
             balance = address(this).balance;
         } else {
             balance = getBalance(getAddress(tokenType));
         }
+
         return balance;
     }
 
     function checkFee(uint count) internal {
         uint8 n = 0;
+
         if (count > 10) {
             while (count >= 10) {
                 count = count / 10;
                 n++;
             }
+
             require(msg.value > getPrice() * n * 5, "C01 - Not enough fee");
         } else {
             require(msg.value > getPrice(), "C01 - Not enough fee");
@@ -101,7 +110,9 @@ contract KLA_Commander is WrapAddresses {
         (bool success, bytes memory balanceBytes) = addr.staticcall(
             abi.encodeWithSignature("balanceOf(address)", address(this))
         );
+
         require(success, "Get balance failed");
+
         return abi.decode(balanceBytes, (uint256));
     }
 
@@ -109,7 +120,9 @@ contract KLA_Commander is WrapAddresses {
         (bool success, bytes memory addressBytes) = address(iAddresses).staticcall(
             abi.encodeWithSignature("viewAddress(uint16)", uint16(index))
         );
+
         require(success, "Get address failed");
+
         return abi.decode(addressBytes, (address));
     }
 }

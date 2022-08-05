@@ -9,9 +9,12 @@ contract KLA_CouponCreator is KLA_Commander, Coupon {
 
     function createCoupon(PackInfo calldata _packInfo, uint256 _createNum) external payable {
         require(_packInfo.total <= 3000, "C05 - Limit count over");
+
         checkFee(packInfo.total);
+
         _transfer(100, getAddress(0), msg.value);
         CouponPack pers = new CouponPack(_packInfo, msg.sender);
+
         emit createCouponEvent(address(pers), _createNum, _packInfo);
     }
 

@@ -6,6 +6,7 @@ import "./Pack.sol";
 contract CouponPack is Coupon {
     constructor(PackInfo memory _packInfo, address _owner) {
         require(_owner != address(0), "AD01 - Not available for manager");
+
         packInfo = _packInfo;
         owner = _owner;
         quantity = _packInfo.total;
@@ -15,8 +16,11 @@ contract CouponPack is Coupon {
         (bool success, bytes memory packBytes) = address(iAddresses).staticcall(
             abi.encodeWithSignature("viewAddress(uint16)", 10001)
         );
+
         require(success, "CouponPack address Fail");
+
         address coupon_commander = abi.decode(packBytes, (address));
+
         assembly {
             let ptr := mload(0x40)
             calldatacopy(ptr, 0, calldatasize())

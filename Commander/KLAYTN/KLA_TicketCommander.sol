@@ -51,25 +51,33 @@ contract KLA_TicketCommander is Ticket, KLA_Commander {
                     packInfo.price * (count)
                 )
             );
+
             require(success, "T01 - Token transfer failed");
         }
+
         _buy(count, msg.sender);
+
         emit buyEvent(address(this), buyNum, msg.sender, count);
     }
 
     function give(address[] memory toAddr) external canUse(toAddr.length) {
         buyList[msg.sender].hasCount = buyList[msg.sender].hasCount - uint32(toAddr.length);
+
         for (uint i = 0; i < toAddr.length; i++) {
             buyList[toAddr[i]].hasCount++;
         }
+
         emit giveEvent(address(this), msg.sender, toAddr);
     }
 
     function use(uint32 _count) external canUse(_count) {
         require(block.timestamp > packInfo.times2, "U01 - Not available time for use");
+
         totalUsedCount = totalUsedCount + _count;
         buyList[msg.sender].useCount = buyList[msg.sender].useCount + (_count);
+
         _transfer(packInfo.tokenType, owner, packInfo.price * (_count));
+
         emit useEvent(address(this), msg.sender, _count);
     }
 
@@ -82,9 +90,11 @@ contract KLA_TicketCommander is Ticket, KLA_Commander {
     {
         uint256 refundValue = 0;
         buyList[msg.sender].hasCount = buyList[msg.sender].hasCount - _count;
+
         if (block.timestamp < packInfo.times1) {
             quantity = quantity + _count;
         }
+
         if (block.timestamp > packInfo.times2 && block.timestamp < packInfo.times3) {
             // in useTime
             totalUsedCount = totalUsedCount + _count;
@@ -95,15 +105,19 @@ contract KLA_TicketCommander is Ticket, KLA_Commander {
             uint value = _percentValue(totalValue, 100 - packInfo.noshowValue);
             (refundValue) = _refund(msg.sender, value);
         }
+
         emit requestRefundEvent(address(this), msg.sender, _count, refundValue);
     }
 
     function calculate() external onlyOwner onCalculateTime {
         require(isCalculated == 0, "CT03 - Already calculated pack");
+
         uint quantityCount = packInfo.total - quantity - totalUsedCount;
         uint qunaityValue = _percentValue(packInfo.price, packInfo.noshowValue) * quantityCount;
+
         isCalculated = 1;
         _transfer(packInfo.tokenType, owner, qunaityValue);
+
         emit calculateEvent(address(this), owner, qunaityValue);
     }
 
@@ -148,9 +162,11 @@ contract KLA_TicketCommander is Ticket, KLA_Commander {
 
     function _percentValue(uint value, uint8 percent) private view returns (uint) {
         (bool success, bytes memory resultPercentValue) = getAddress(1300).staticcall(
-            abi.encodeWithSignature("getValue(uint256,uint256)", value, percent)
+            abi.encodeWithSignature("getValuePercent(uint256,uint256)", value, percent)
         );
-        require(success, "Get value failed");
+
+        require(success, "Get value percent failed");
+
         return abi.decode(resultPercentValue, (uint));
     }
 
@@ -161,7 +177,9 @@ contract KLA_TicketCommander is Ticket, KLA_Commander {
 
     function _refund(address _to, uint value) private returns (uint256) {
         uint refundValue = value;
+
         _transfer(packInfo.tokenType, _to, refundValue);
+
         return refundValue;
     }
 }

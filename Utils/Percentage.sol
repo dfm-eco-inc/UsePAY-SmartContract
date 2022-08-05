@@ -4,17 +4,18 @@ pragma solidity >=0.8.0;
 import "../Library/FullMath.sol";
 
 contract Percentage is FullMath {
-    function getPercent(uint a, uint b) external view returns (uint) {
-        require(a >= b, "getPercent Error : a<b");
+    function getTimePercent(uint a, uint b) external pure returns (uint) {
+        require(a >= b, "getTimePercent Error");
         return toUInt(mul(div(fromUInt(b), fromUInt(a)), fromUInt(100)));
     }
 
-    function getValue(uint a, uint percent) public view returns (uint) {
+    function getValuePercent(uint a, uint percent) public pure returns (uint) {
         if (percent == 100) {
             return a;
         } else if (percent == 0) {
             return 0;
         }
+
         if (percent == 60) {
             if (a == 10) {
                 return 6;
@@ -34,6 +35,7 @@ contract Percentage is FullMath {
                 return 1;
             }
         }
+
         return toUInt(mul(div(fromUInt(a), fromUInt(100)), fromUInt(percent)));
     }
 }

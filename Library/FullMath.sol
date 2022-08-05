@@ -11,6 +11,7 @@ contract FullMath {
         unchecked {
             uint256 xExponent = (uint128(x) >> 112) & 0x7FFF;
             uint256 yExponent = (uint128(y) >> 112) & 0x7FFF;
+
             if (xExponent == 0x7FFF) {
                 if (yExponent == 0x7FFF) {
                     if (x == y) return x ^ (y & 0x80000000000000000000000000000000);
@@ -25,30 +26,36 @@ contract FullMath {
                 else return y ^ (x & 0x80000000000000000000000000000000);
             } else {
                 uint256 xSignifier = uint128(x) & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
+
                 if (xExponent == 0) xExponent = 1;
                 else xSignifier |= 0x10000000000000000000000000000;
+
                 uint256 ySignifier = uint128(y) & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
+
                 if (yExponent == 0) yExponent = 1;
                 else ySignifier |= 0x10000000000000000000000000000;
+
                 xSignifier *= ySignifier;
+
                 if (xSignifier == 0)
                     return
                         (x ^ y) & 0x80000000000000000000000000000000 > 0
                             ? NEGATIVE_ZERO
                             : POSITIVE_ZERO;
+
                 xExponent += yExponent;
+
                 uint256 msb = xSignifier >=
                     0x200000000000000000000000000000000000000000000000000000000
                     ? 225
                     : xSignifier >= 0x100000000000000000000000000000000000000000000000000000000
                     ? 224
                     : mostSignificantBit(xSignifier);
+
                 if (xExponent + msb < 16496) {
-                    // Underflow
                     xExponent = 0;
                     xSignifier = 0;
                 } else if (xExponent + msb < 16608) {
-                    // Subnormal
                     if (xExponent < 16496) xSignifier >>= 16496 - xExponent;
                     else if (xExponent > 16496) xSignifier <<= xExponent - 16496;
                     xExponent = 0;
@@ -58,9 +65,11 @@ contract FullMath {
                 } else {
                     if (msb > 112) xSignifier >>= msb - 112;
                     else if (msb < 112) xSignifier <<= 112 - msb;
+
                     xSignifier &= 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
                     xExponent = xExponent + msb - 16607;
                 }
+
                 return
                     bytes16(
                         uint128(
@@ -77,6 +86,7 @@ contract FullMath {
         unchecked {
             uint256 xExponent = (uint128(x) >> 112) & 0x7FFF;
             uint256 yExponent = (uint128(y) >> 112) & 0x7FFF;
+
             if (xExponent == 0x7FFF) {
                 if (yExponent == 0x7FFF) return NaN;
                 else return x ^ (y & 0x80000000000000000000000000000000);
@@ -88,9 +98,12 @@ contract FullMath {
                 else return POSITIVE_INFINITY | ((x ^ y) & 0x80000000000000000000000000000000);
             } else {
                 uint256 ySignifier = uint128(y) & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
+
                 if (yExponent == 0) yExponent = 1;
                 else ySignifier |= 0x10000000000000000000000000000;
+
                 uint256 xSignifier = uint128(x) & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
+
                 if (xExponent == 0) {
                     if (xSignifier != 0) {
                         uint shift = 226 - mostSignificantBit(xSignifier);
@@ -101,13 +114,17 @@ contract FullMath {
                 } else {
                     xSignifier = (xSignifier | 0x10000000000000000000000000000) << 114;
                 }
+
                 xSignifier = xSignifier / ySignifier;
+
                 if (xSignifier == 0)
                     return
                         (x ^ y) & 0x80000000000000000000000000000000 > 0
                             ? NEGATIVE_ZERO
                             : POSITIVE_ZERO;
+
                 assert(xSignifier >= 0x1000000000000000000000000000);
+
                 uint256 msb = xSignifier >= 0x80000000000000000000000000000
                     ? mostSignificantBit(xSignifier)
                     : xSignifier >= 0x40000000000000000000000000000
@@ -115,24 +132,23 @@ contract FullMath {
                     : xSignifier >= 0x20000000000000000000000000000
                     ? 113
                     : 112;
+
                 if (xExponent + msb > yExponent + 16497) {
-                    // Overflow
                     xExponent = 0x7FFF;
                     xSignifier = 0;
                 } else if (xExponent + msb + 16380 < yExponent) {
-                    // Underflow
                     xExponent = 0;
                     xSignifier = 0;
                 } else if (xExponent + msb + 16268 < yExponent) {
-                    // Subnormal
                     if (xExponent + 16380 > yExponent)
                         xSignifier <<= xExponent + 16380 - yExponent;
                     else if (xExponent + 16380 < yExponent)
                         xSignifier >>= yExponent - xExponent - 16380;
+
                     xExponent = 0;
                 } else {
-                    // Normal
                     if (msb > 112) xSignifier >>= msb - 112;
+
                     xSignifier &= 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
                     xExponent = xExponent + msb + 16269 - yExponent;
                 }

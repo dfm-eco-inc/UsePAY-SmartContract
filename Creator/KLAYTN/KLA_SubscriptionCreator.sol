@@ -9,9 +9,12 @@ contract KLA_SubscriptionCreator is Subscription, KLA_Commander {
 
     function createSubscription(PackInfo calldata _packInfo, uint256 _createNum) external payable {
         require(_packInfo.total <= 1000, "C05 - Limit count over");
+
         checkFee(packInfo.total);
+
         _transfer(100, getAddress(0), msg.value);
         SubscriptionPack pers = new SubscriptionPack(_packInfo, msg.sender);
+
         emit createSubscriptionEvent(address(pers), _createNum, _packInfo);
     }
 

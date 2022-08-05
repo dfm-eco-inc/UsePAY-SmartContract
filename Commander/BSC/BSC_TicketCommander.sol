@@ -57,25 +57,33 @@ contract BSC_TicketCommander is Ticket, Commander {
                     packInfo.price * (count)
                 )
             );
+
             require(success, "T01 - Token transfer failed");
         }
+
         _buy(count, msg.sender);
+
         emit buyEvent(address(this), buyNum, msg.sender, count);
     }
 
     function give(address[] memory toAddr) external canUse(toAddr.length) {
         buyList[msg.sender].hasCount = buyList[msg.sender].hasCount - uint32(toAddr.length);
+
         for (uint i = 0; i < toAddr.length; i++) {
             buyList[toAddr[i]].hasCount++;
         }
+
         emit giveEvent(address(this), msg.sender, toAddr);
     }
 
     function use(uint32 _count) external canUse(_count) {
         require(block.timestamp > packInfo.times2, "U01 - Not available time for use");
+
         totalUsedCount = totalUsedCount + _count;
         buyList[msg.sender].useCount = buyList[msg.sender].useCount + (_count);
+
         _transfer(packInfo.tokenType, owner, packInfo.price * (_count));
+
         emit useEvent(address(this), msg.sender, _count);
     }
 
@@ -88,10 +96,13 @@ contract BSC_TicketCommander is Ticket, Commander {
     {
         uint256 refundValue = 0;
         uint256 swapValue = 0;
+
         buyList[msg.sender].hasCount = buyList[msg.sender].hasCount - _count;
+
         if (block.timestamp < packInfo.times1) {
             quantity = quantity + _count;
         }
+
         if (block.timestamp > packInfo.times2 && block.timestamp < packInfo.times3) {
             // in useTime
             totalUsedCount = totalUsedCount + _count;
@@ -108,10 +119,13 @@ contract BSC_TicketCommander is Ticket, Commander {
 
     function calculate() external onlyOwner onCalculateTime {
         require(isCalculated == 0, "CT03 - Already calculated pack");
+
         uint quantityCount = packInfo.total - quantity - totalUsedCount;
         uint qunaityValue = _percentValue(packInfo.price, packInfo.noshowValue) * quantityCount;
+
         isCalculated = 1;
         _transfer(packInfo.tokenType, owner, qunaityValue);
+
         emit calculateEvent(address(this), owner, qunaityValue);
     }
 
@@ -156,9 +170,11 @@ contract BSC_TicketCommander is Ticket, Commander {
 
     function _percentValue(uint value, uint8 percent) private view returns (uint) {
         (bool success, bytes memory resultPercentValue) = getAddress(1300).staticcall(
-            abi.encodeWithSignature("getValue(uint256,uint256)", value, percent)
+            abi.encodeWithSignature("getValuePercent(uint256,uint256)", value, percent)
         );
-        require(success, "Get value failed");
+
+        require(success, "Get value percent failed");
+
         return abi.decode(resultPercentValue, (uint));
     }
 
@@ -176,8 +192,8 @@ contract BSC_TicketCommander is Ticket, Commander {
         uint refundPercentValue = 0;
         uint swapValue = 0;
         uint feeValue = 0;
+
         if (packInfo.tokenType == 100) {
-            // TOKEN == BSC
             refundValue = _percentValue(value, (100 - percent));
             refundPercentValue = value - refundValue;
         } else {
@@ -188,15 +204,19 @@ contract BSC_TicketCommander is Ticket, Commander {
                 refundValue = value;
             }
         }
+
         if (refundValue != 0) {
             _transfer(packInfo.tokenType, _to, refundValue);
         }
+
         if (refundPercentValue != 0) {
             swapValue = _swap(101, _to, refundPercentValue);
         }
+
         if (feeValue != 0) {
             _transfer(packInfo.tokenType, getAddress(0), feeValue);
         }
+
         return (refundValue, swapValue);
     }
 }

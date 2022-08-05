@@ -9,7 +9,9 @@ contract BSC_CouponCreator is Commander, Coupon {
 
     function createCoupon(PackInfo calldata _packInfo, uint256 _createNum) external {
         require(_packInfo.total <= 3000, "C05 - Limit count over");
+
         CouponPack pers = new CouponPack(_packInfo, msg.sender);
+
         emit createCouponEvent(address(pers), _createNum, _packInfo);
     }
 

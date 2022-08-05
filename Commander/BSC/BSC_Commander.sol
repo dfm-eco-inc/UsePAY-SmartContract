@@ -111,19 +111,21 @@ contract Commander is WrapAddresses {
                 block.timestamp + 1000 // daedline
             )
         );
+
         require(success, "swap ETH->TOKEN fail");
 
-        // uint256[] memory amountOut = abi.decode(result, (uint256[]));
         return abi.decode(result, (uint256[]))[1];
     }
 
     function checkFee(uint count) internal {
         uint8 n = 0;
+
         if (count > 10) {
             while (count >= 10) {
                 count = count / 10;
                 n++;
             }
+
             require(msg.value > getPrice() * n * 5, "C01 - Not enough fee");
         } else {
             require(msg.value > getPrice(), "C01 - Not enough fee");
@@ -134,7 +136,9 @@ contract Commander is WrapAddresses {
         (bool success, bytes memory balanceBytes) = addr.staticcall(
             abi.encodeWithSignature("balanceOf(address)", address(this))
         );
+
         require(success, "Get balance failed");
+
         return abi.decode(balanceBytes, (uint256));
     }
 
@@ -142,7 +146,9 @@ contract Commander is WrapAddresses {
         (bool success, bytes memory addressBytes) = address(iAddresses).staticcall(
             abi.encodeWithSignature("viewAddress(uint16)", uint16(index))
         );
+
         require(success, "Get address failed");
+
         return abi.decode(addressBytes, (address));
     }
 }
