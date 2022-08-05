@@ -24,8 +24,10 @@ contract CouponPack is Coupon {
         assembly {
             let ptr := mload(0x40)
             calldatacopy(ptr, 0, calldatasize())
+
             let result := delegatecall(gas(), coupon_commander, ptr, calldatasize(), 0, 0)
             returndatacopy(ptr, 0, returndatasize())
+
             switch result
             case 0 {
                 revert(ptr, returndatasize()) //fail
