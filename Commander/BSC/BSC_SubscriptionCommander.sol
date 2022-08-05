@@ -8,7 +8,7 @@ contract BSC_SubscriptionCommander is Subscription, Commander {
     event calculateEvent(address indexed pack, address owner, uint256 value);
     event changeTotalEvent(address indexed, uint256 _before, uint256 _after);
     event buyEvent(address indexed pack, uint256 buyNum, address buyer); // 0: pack indexed, 1: buyer, 2: count
-    event noshowRefundEvent(address indexed pack);
+    event disabledPackRefundEvent(address indexed pack);
     event requestRefundEvent(
         address indexed pack,
         address buyer,
@@ -16,7 +16,7 @@ contract BSC_SubscriptionCommander is Subscription, Commander {
         uint256 money,
         uint256 swap
     ); // 0: pack indexed, 1: buyer, 2: count
-    event noshowRefundUser(
+    event disabledPackRefundUser(
         address indexed pack,
         address[] buyers,
         uint256[] value,
@@ -96,7 +96,7 @@ contract BSC_SubscriptionCommander is Subscription, Commander {
             ) {
                 if (refundCountForDisable >= _percentValue(packInfo.total - quantity, 60)) {
                     disabledPack = true;
-                    noShowTime = block.timestamp;
+                    disabledTime = block.timestamp;
                 }
 
                 refundCountForDisable++;
@@ -116,7 +116,7 @@ contract BSC_SubscriptionCommander is Subscription, Commander {
             }
         } else {
             require(
-                block.timestamp <= noShowTime + 15552000,
+                block.timestamp <= disabledTime + 15552000,
                 "N04 - Not available time for refund"
             );
 
@@ -160,9 +160,9 @@ contract BSC_SubscriptionCommander is Subscription, Commander {
         emit calculateEvent(address(this), owner, balance);
     }
 
-    function noShowRefund(address[] calldata _addrList) external onlyManager(msg.sender) {
+    function disabledPackRefund(address[] calldata _addrList) external onlyManager(msg.sender) {
         require(disabledPack, "N02 - Not disabled pack");
-        require(block.timestamp > noShowTime + 15552000, "N03 - Not available time for refund");
+        require(block.timestamp > disabledTime + 15552000, "N03 - Not available time for refund");
 
         uint256[] memory values = new uint256[](_addrList.length);
         uint256[] memory swaps = new uint256[](_addrList.length);
@@ -174,10 +174,10 @@ contract BSC_SubscriptionCommander is Subscription, Commander {
             (values[i], swaps[i]) = _refund(_to, refundValue, 10);
         }
 
-        emit noshowRefundUser(address(this), _addrList, values, swaps);
+        emit disabledPackRefundUser(address(this), _addrList, values, swaps);
 
         _transfer(packInfo.tokenType, msg.sender, _getBalance(packInfo.tokenType));
-        emit noshowRefundEvent(address(this));
+        emit disabledPackRefundEvent(address(this));
     }
 
     function changeTotal(uint32 count) external payable onlyOwner {
@@ -220,7 +220,7 @@ contract BSC_SubscriptionCommander is Subscription, Commander {
     }
 
     function viewNoshowTime() external view returns (uint) {
-        return noShowTime;
+        return disabledTime;
     }
 
     function _percentValue(uint value, uint8 percent) private view returns (uint) {

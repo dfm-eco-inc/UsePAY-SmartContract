@@ -7,8 +7,8 @@ import "./KLA_Commander.sol";
 contract KLA_SubscriptionCommander is Subscription, KLA_Commander {
     event buyEvent(address indexed pack, uint256 buyNum, address buyer); // 0: pack indexed, 1: buyer, 2: count
     event requestRefundEvent(address indexed pack, address buyer, uint256 num, uint256 money); // 0: pack indexed, 1: buyer, 2: count
-    event noshowRefundEvent(address indexed pack);
-    event noshowRefundUser(address indexed pack, address[] buyers, uint256[] value);
+    event disabledPackRefundEvent(address indexed pack);
+    event disabledPackRefundUser(address indexed pack, address[] buyers, uint256[] value);
     event calculateEvent(address indexed pack, address owner, uint256 value);
     event changeTotalEvent(address indexed, uint256 _before, uint256 _after);
 
@@ -85,7 +85,7 @@ contract KLA_SubscriptionCommander is Subscription, KLA_Commander {
             ) {
                 if (refundCountForDisable >= _percentValue(packInfo.total - quantity, 60)) {
                     disabledPack = true;
-                    noShowTime = block.timestamp;
+                    disabledTime = block.timestamp;
                 }
 
                 refundCountForDisable++;
@@ -105,7 +105,7 @@ contract KLA_SubscriptionCommander is Subscription, KLA_Commander {
             }
         } else {
             require(
-                block.timestamp <= noShowTime + 15552000,
+                block.timestamp <= disabledTime + 15552000,
                 "N04 - Not available time for refund"
             );
 
@@ -149,9 +149,9 @@ contract KLA_SubscriptionCommander is Subscription, KLA_Commander {
         emit calculateEvent(address(this), owner, balance);
     }
 
-    function noShowRefund(address[] calldata _addrList) external onlyManager(msg.sender) {
+    function disabledPackRefund(address[] calldata _addrList) external onlyManager(msg.sender) {
         require(disabledPack, "N02 - Not disabled pack");
-        require(block.timestamp > noShowTime + 15552000, "N03 - Not available time for refund");
+        require(block.timestamp > disabledTime + 15552000, "N03 - Not available time for refund");
 
         uint256[] memory values = new uint256[](_addrList.length);
         uint refundValue = _percentValue(packInfo.price, 95);
@@ -162,12 +162,12 @@ contract KLA_SubscriptionCommander is Subscription, KLA_Commander {
             (values[i]) = _refund(_to, refundValue);
         }
 
-        emit noshowRefundUser(address(this), _addrList, values);
+        emit disabledPackRefundUser(address(this), _addrList, values);
 
         uint balance = _getBalance(packInfo.tokenType);
         _transfer(packInfo.tokenType, msg.sender, balance);
 
-        emit noshowRefundEvent(address(this));
+        emit disabledPackRefundEvent(address(this));
     }
 
     function changeTotal(uint32 count) external payable onlyOwner {
@@ -210,7 +210,7 @@ contract KLA_SubscriptionCommander is Subscription, KLA_Commander {
     }
 
     function viewNoshowTime() external view returns (uint) {
-        return noShowTime;
+        return disabledTime;
     }
 
     function _percentValue(uint value, uint8 percent) private view returns (uint) {

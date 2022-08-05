@@ -47,8 +47,8 @@ contract Coupon is WrapAddresses {
     }
 
     uint8 internal ver = 1;
-    address internal owner;
     uint32 internal quantity;
+    address internal owner;
 
     PackInfo internal packInfo;
     mapping(address => pack) internal buyList;
@@ -73,8 +73,8 @@ contract Subscription is WrapAddresses {
     uint8 internal ver = 1;
     uint32 internal refundCountForDisable = 0;
     uint32 internal quantity;
+    uint32 internal disabledTime = 0;
     address internal owner;
-    uint256 internal noShowTime = 0;
 
     PackInfo internal packInfo;
     mapping(address => pack) internal buyList;
