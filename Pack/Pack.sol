@@ -24,9 +24,9 @@ contract Ticket is WrapAddresses {
     bool internal isCalculated = false;
     uint8 internal ver = 1;
     uint32 internal totalUsedCount = 0;
+    uint32 internal refundCount = 0;
+    uint32 internal quantity;
     address internal owner;
-    uint256 internal refundCount = 0;
-    uint256 internal quantity;
 
     PackInfo internal packInfo;
     mapping(address => pack) internal buyList;
@@ -49,7 +49,7 @@ contract Coupon is WrapAddresses {
 
     uint8 internal ver = 1;
     address internal owner;
-    uint256 internal quantity;
+    uint32 internal quantity;
 
     PackInfo internal packInfo;
     mapping(address => pack) internal buyList;
@@ -72,10 +72,10 @@ contract Subscription is WrapAddresses {
 
     bool internal disabledPack = false;
     uint8 internal ver = 1;
+    uint32 internal refundCount = 0;
+    uint32 internal refundCountForDisable = 0;
+    uint32 internal quantity;
     address internal owner;
-    uint256 internal refundCount = 0;
-    uint256 internal refundCountForDisable = 0;
-    uint256 internal quantity;
     uint256 internal noShowTime = 0;
 
     PackInfo internal packInfo;
