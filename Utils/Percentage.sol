@@ -6,7 +6,17 @@ import "../Library/FullMath.sol";
 contract Percentage is FullMath {
     function getTimePercent(uint a, uint b) external pure returns (uint) {
         require(a >= b, "getTimePercent Error");
-        return toUInt(mul(div(fromUInt(b), fromUInt(a)), fromUInt(100)));
+
+        uint c1 = (b * 1000) / a;
+        uint c2 = c1 % 10;
+        uint c3 = (c1 - c2) / 10;
+
+        // Rounding check
+        if (c2 >= 5) {
+            return c3 + 1;
+        } else {
+            return c3;
+        }
     }
 
     function getPercentValue(uint amount, uint percent) external pure returns (uint) {
