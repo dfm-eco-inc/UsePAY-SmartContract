@@ -24,7 +24,6 @@ contract Ticket is WrapAddresses {
     bool internal isCalculated = false;
     uint8 internal ver = 1;
     uint32 internal totalUsedCount = 0;
-    uint32 internal refundCount = 0;
     uint32 internal quantity;
     address internal owner;
 
@@ -72,7 +71,6 @@ contract Subscription is WrapAddresses {
 
     bool internal disabledPack = false;
     uint8 internal ver = 1;
-    uint32 internal refundCount = 0;
     uint32 internal refundCountForDisable = 0;
     uint32 internal quantity;
     address internal owner;
