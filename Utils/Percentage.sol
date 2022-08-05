@@ -9,7 +9,7 @@ contract Percentage is FullMath {
         return toUInt(mul(div(fromUInt(b), fromUInt(a)), fromUInt(100)));
     }
 
-    function getPercentValue(uint amount, uint percent) public pure returns (uint) {
+    function getPercentValue(uint amount, uint percent) external pure returns (uint) {
         if (percent == 100) return amount;
         if (percent == 0) return 0;
 
