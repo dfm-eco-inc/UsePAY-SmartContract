@@ -21,8 +21,8 @@ contract Ticket is WrapAddresses {
         uint256 price;
     }
 
+    bool internal isCalculated = false;
     uint8 internal ver = 1;
-    uint8 internal isCalculated = 0;
     uint32 internal totalUsedCount = 0;
     address internal owner;
     uint256 internal refundCount = 0;

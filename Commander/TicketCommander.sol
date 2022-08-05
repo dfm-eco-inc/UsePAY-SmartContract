@@ -117,12 +117,12 @@ contract TicketCommander is Ticket, Commander {
     }
 
     function calculate() external onlyOwner onCalculateTime {
-        require(isCalculated == 0, "CT03 - Already calculated pack");
+        require(!isCalculated, "CT03 - Already calculated pack");
 
         uint quantityCount = packInfo.total - quantity - totalUsedCount;
         uint qunaityValue = _percentValue(packInfo.price, packInfo.noshowValue) * quantityCount;
 
-        isCalculated = 1;
+        isCalculated = true;
         _transfer(packInfo.tokenType, owner, qunaityValue);
 
         emit calculateEvent(address(this), owner, qunaityValue);
