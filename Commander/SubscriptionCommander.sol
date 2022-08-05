@@ -237,8 +237,8 @@ contract SubscriptionCommander is Subscription, Commander {
     }
 
     function _buy(address buyer) private {
-        buyList[buyer].hasCount += 1;
-        quantity -= 1;
+        buyList[buyer].hasCount++;
+        quantity--;
     }
 
     function _refund(

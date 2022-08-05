@@ -15,7 +15,7 @@ contract Percentage is FullMath {
 
         uint result = toUInt(mul(div(fromUInt(amount), fromUInt(100)), fromUInt(percent)));
 
-        if (amount % 100 > 0) result += 1;
+        if (amount % 100 > 0) result++;
         return result;
     }
 }

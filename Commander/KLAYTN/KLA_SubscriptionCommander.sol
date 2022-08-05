@@ -224,8 +224,8 @@ contract KLA_SubscriptionCommander is Subscription, KLA_Commander {
     }
 
     function _buy(address buyer) private {
-        buyList[buyer].hasCount += 1;
-        quantity -= 1;
+        buyList[buyer].hasCount++;
+        quantity--;
     }
 
     function _refund(address _to, uint value) private returns (uint256) {
