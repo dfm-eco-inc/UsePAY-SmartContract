@@ -70,13 +70,12 @@ contract Subscription is WrapAddresses {
         uint256 price;
     }
 
+    bool internal disabledPack = false;
     uint8 internal ver = 1;
     address internal owner;
     uint256 internal refundCount = 0;
-    uint256 internal noshowCount = 0;
-    uint256 internal noshowLimit = 0;
+    uint256 internal refundCountForDisable = 0;
     uint256 internal quantity;
-    uint256 internal isLive = 0;
     uint256 internal noShowTime = 0;
 
     PackInfo internal packInfo;

@@ -169,10 +169,10 @@ contract TicketCommander is Ticket, Commander {
 
     function _percentValue(uint value, uint8 percent) private view returns (uint) {
         (bool success, bytes memory resultPercentValue) = getAddress(1300).staticcall(
-            abi.encodeWithSignature("getValuePercent(uint256,uint256)", value, percent)
+            abi.encodeWithSignature("getPercentValue(uint256,uint256)", value, percent)
         );
 
-        require(success, "Get value percent failed");
+        require(success, "Getting a value of the percent is failed");
 
         return abi.decode(resultPercentValue, (uint));
     }

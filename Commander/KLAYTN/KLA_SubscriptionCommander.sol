@@ -38,7 +38,7 @@ contract KLA_SubscriptionCommander is Subscription, KLA_Commander {
     }
 
     modifier checkLive() {
-        require(isLive == 0, "N01 - Disabled pack");
+        require(!disabledPack, "N01 - Disabled pack");
         _;
     }
 
@@ -76,24 +76,19 @@ contract KLA_SubscriptionCommander is Subscription, KLA_Commander {
     function requestRefund() external canUse blockReEntry haltInEmergency requestLimit(1 minutes) {
         uint refundValue = 0;
 
-        if (isLive == 0) {
+        if (!disabledPack) {
             if (block.timestamp < packInfo.times2) {
                 quantity++;
                 refundValue = packInfo.price;
             } else if (
                 block.timestamp > packInfo.times2 && block.timestamp < packInfo.times2 + 172800
             ) {
-                if (noshowLimit == 0) {
-                    noshowLimit = _percentValue(packInfo.total - quantity, 60);
-                }
-
-                noshowCount++;
-
-                if (noshowCount >= noshowLimit) {
-                    isLive = 1;
+                if (refundCountForDisable >= _percentValue(packInfo.total - quantity, 60)) {
+                    disabledPack = true;
                     noShowTime = block.timestamp;
                 }
 
+                refundCountForDisable++;
                 refundValue = packInfo.price;
             } else if (block.timestamp > packInfo.times2 + 172800) {
                 (bool success, bytes memory percentBytes) = getAddress(1300).staticcall(
@@ -155,7 +150,7 @@ contract KLA_SubscriptionCommander is Subscription, KLA_Commander {
     }
 
     function noShowRefund(address[] calldata _addrList) external onlyManager(msg.sender) {
-        require(isLive == 1, "N02 - Not disabled pack");
+        require(disabledPack, "N02 - Not disabled pack");
         require(block.timestamp > noShowTime + 15552000, "N03 - Not available time for refund");
 
         uint256[] memory values = new uint256[](_addrList.length);
@@ -202,8 +197,8 @@ contract KLA_SubscriptionCommander is Subscription, KLA_Commander {
         return quantity;
     }
 
-    function viewIsLive() external view returns (uint256) {
-        return isLive;
+    function viewIsDisabled() external view returns (bool) {
+        return disabledPack;
     }
 
     function viewUser(address userAddr) external view returns (pack memory) {
@@ -220,17 +215,17 @@ contract KLA_SubscriptionCommander is Subscription, KLA_Commander {
 
     function _percentValue(uint value, uint8 percent) private view returns (uint) {
         (bool success, bytes memory resultPercentValue) = getAddress(1300).staticcall(
-            abi.encodeWithSignature("getValuePercent(uint256,uint256)", value, percent)
+            abi.encodeWithSignature("getPercentValue(uint256,uint256)", value, percent)
         );
 
-        require(success, "Get value percent failed");
+        require(success, "Getting a value of the percent is failed");
 
         return abi.decode(resultPercentValue, (uint));
     }
 
     function _buy(address buyer) private {
-        buyList[buyer].hasCount = buyList[buyer].hasCount + 1;
-        quantity = quantity - 1;
+        buyList[buyer].hasCount += 1;
+        quantity -= 1;
     }
 
     function _refund(address _to, uint value) private returns (uint256) {
