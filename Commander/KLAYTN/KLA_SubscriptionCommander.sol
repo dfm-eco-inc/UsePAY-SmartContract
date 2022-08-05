@@ -85,7 +85,7 @@ contract KLA_SubscriptionCommander is Subscription, KLA_Commander {
             ) {
                 if (refundCountForDisable >= _percentValue(packInfo.total - quantity, 60)) {
                     disabledPack = true;
-                    disabledTime = block.timestamp;
+                    disabledTime = uint32(block.timestamp);
                 }
 
                 refundCountForDisable++;
