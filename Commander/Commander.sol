@@ -17,10 +17,10 @@ contract Commander is WrapAddresses {
         uint160 sqrtPriceLimitX96;
     }
 
-    AggregatorV3Interface internal priceFeed;
-    IEmergencyStop internal contractStop;
     uint private reqeustTime = block.timestamp;
     bool private reEntry = false;
+    AggregatorV3Interface internal priceFeed;
+    IEmergencyStop internal contractStop;
 
     event giveEvent(address indexed pack, address fromAddr, address[] toAddr);
     event getChainlinkDataFeedAddressEvent(address dataFeed);

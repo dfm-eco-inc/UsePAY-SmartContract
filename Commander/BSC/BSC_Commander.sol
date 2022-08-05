@@ -6,10 +6,10 @@ import "../../Library/AggregatorV3Interface.sol";
 import "../EmergencyStop.sol";
 
 contract Commander is WrapAddresses {
+    bool private reEntry = false;
+    uint private reqeustTime = block.timestamp;
     AggregatorV3Interface internal priceFeed;
     IEmergencyStop internal contractStop;
-    uint private reqeustTime = block.timestamp;
-    bool private reEntry = false;
 
     event giveEvent(address indexed pack, address fromAddr, address[] toAddr);
     event getChainlinkDataFeedAddressEvent(address dataFeed);
@@ -44,11 +44,13 @@ contract Commander is WrapAddresses {
 
     function getCountFee(uint count) external view returns (uint256) {
         uint8 n = 0;
+
         if (count > 10) {
             while (count >= 10) {
                 count = count / 10;
                 n++;
             }
+
             return getPrice() * n * 5;
         } else {
             return getPrice();
@@ -59,6 +61,7 @@ contract Commander is WrapAddresses {
     function getPrice() public view returns (uint256) {
         (, int price, , , ) = priceFeed.latestRoundData();
         uint256 totalDecimal = 10**(18 + priceFeed.decimals());
+
         return totalDecimal / uint256(price);
     }
 
@@ -73,17 +76,20 @@ contract Commander is WrapAddresses {
             (bool success, ) = getAddress(tokenType).call(
                 abi.encodeWithSignature("transfer(address,uint256)", _to, value)
             );
+
             require(success, "TOKEN transfer Fail");
         }
     }
 
     function _getBalance(uint16 tokenType) internal view returns (uint256) {
         uint balance = 0;
+
         if (tokenType == 100) {
             balance = address(this).balance;
         } else {
             balance = getBalance(getAddress(tokenType));
         }
+
         return balance;
     }
 
@@ -105,9 +111,10 @@ contract Commander is WrapAddresses {
                 block.timestamp + 1000 // daedline
             )
         );
-        uint256[] memory amountOut = abi.decode(result, (uint256[]));
         require(success, "swap ETH->TOKEN fail");
-        return amountOut[1];
+
+        // uint256[] memory amountOut = abi.decode(result, (uint256[]));
+        return abi.decode(result, (uint256[]))[1];
     }
 
     function checkFee(uint count) internal {
