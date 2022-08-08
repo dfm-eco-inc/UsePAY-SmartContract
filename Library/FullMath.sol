@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-4-Clause
-pragma solidity >=0.8.0;
+pragma solidity 0.8.9;
 
 contract FullMath {
     bytes16 private constant POSITIVE_INFINITY = 0x7FFF0000000000000000000000000000;

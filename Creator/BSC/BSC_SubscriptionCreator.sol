@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GNU LGPLv3
-pragma solidity >=0.8.0;
+pragma solidity 0.8.9;
 
 import "../../Pack/SubscriptionPack.sol";
 import "../../Commander/BSC/BSC_Commander.sol";
