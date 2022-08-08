@@ -22,7 +22,7 @@ contract Ticket is WrapAddresses {
     }
 
     bool internal isCalculated = false;
-    uint8 internal ver = 1;
+    uint8 internal immutable ver = 1;
     uint32 internal totalUsedCount = 0;
     uint32 internal quantity;
     address internal owner;
@@ -46,7 +46,7 @@ contract Coupon is WrapAddresses {
         uint32 times3;
     }
 
-    uint8 internal ver = 1;
+    uint8 internal immutable ver = 1;
     uint32 internal quantity;
     address internal owner;
 
@@ -69,7 +69,7 @@ contract Subscription is WrapAddresses {
         uint256 price;
     }
 
-    uint8 internal ver = 1;
+    uint8 internal immutable ver = 1;
     uint32 internal quantity;
     address internal owner;
 
