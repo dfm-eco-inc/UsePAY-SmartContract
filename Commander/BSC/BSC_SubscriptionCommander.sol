@@ -8,7 +8,6 @@ contract BSC_SubscriptionCommander is Subscription, Commander {
     event calculateEvent(address indexed pack, address owner, uint256 value);
     event changeTotalEvent(address indexed, uint256 _before, uint256 _after);
     event buyEvent(address indexed pack, uint256 buyNum, address buyer); // 0: pack indexed, 1: buyer, 2: count
-    event disabledPackRefundEvent(address indexed pack);
     event requestRefundEvent(
         address indexed pack,
         address buyer,
@@ -16,12 +15,6 @@ contract BSC_SubscriptionCommander is Subscription, Commander {
         uint256 money,
         uint256 swap
     ); // 0: pack indexed, 1: buyer, 2: count
-    event disabledPackRefundUser(
-        address indexed pack,
-        address[] buyers,
-        uint256[] value,
-        uint256[] swap
-    );
 
     modifier onlyOwner() {
         require(msg.sender == owner, "O01 - Only for issuer");
@@ -48,12 +41,7 @@ contract BSC_SubscriptionCommander is Subscription, Commander {
         _;
     }
 
-    modifier checkLive() {
-        require(!disabledPack, "N01 - Disabled pack");
-        _;
-    }
-
-    function buy(uint256 buyNum) external payable canBuy checkLive {
+    function buy(uint256 buyNum) external payable canBuy {
         if (packInfo.tokenType == 100) {
             require(msg.value == packInfo.price, "B03 - Not enough value");
         } else {
@@ -74,7 +62,7 @@ contract BSC_SubscriptionCommander is Subscription, Commander {
         emit buyEvent(address(this), buyNum, msg.sender);
     }
 
-    function give(address[] memory toAddr) external canUse checkLive {
+    function give(address[] memory toAddr) external canUse {
         buyList[msg.sender].hasCount = buyList[msg.sender].hasCount - uint32(toAddr.length);
 
         for (uint i = 0; i < toAddr.length; i++) {
@@ -85,42 +73,26 @@ contract BSC_SubscriptionCommander is Subscription, Commander {
     }
 
     function requestRefund() external canUse blockReEntry haltInEmergency requestLimit(1 minutes) {
+        require(block.timestamp < packInfo.times3, "N04 - Not available time for refund");
+
         uint refundValue = 0;
 
-        if (!disabledPack) {
-            if (block.timestamp < packInfo.times2) {
-                quantity++;
-                refundValue = packInfo.price;
-            } else if (
-                block.timestamp > packInfo.times2 && block.timestamp < packInfo.times2 + 172800
-            ) {
-                if (refundCountForDisable >= _percentValue(packInfo.total - quantity, 60)) {
-                    disabledPack = true;
-                    disabledTime = uint32(block.timestamp);
-                }
-
-                refundCountForDisable++;
-                refundValue = packInfo.price;
-            } else if (block.timestamp > packInfo.times2 + 172800) {
-                (bool success, bytes memory resultPercent) = getAddress(1300).staticcall(
-                    abi.encodeWithSignature(
-                        "getTimePercent(uint256,uint256)",
-                        packInfo.times3 - packInfo.times2,
-                        packInfo.times3 - block.timestamp
-                    )
-                );
-
-                require(success, "Get time percent failed");
-
-                refundValue = _percentValue(packInfo.price, abi.decode(resultPercent, (uint8)));
-            }
+        if (block.timestamp < packInfo.times2) {
+            quantity++;
+            refundValue = packInfo.price;
         } else {
-            require(
-                block.timestamp <= disabledTime + 15552000,
-                "N04 - Not available time for refund"
+            (bool success, bytes memory resultPercent) = getAddress(1300).staticcall(
+                abi.encodeWithSignature(
+                    "getTimePercent(uint256,uint256)",
+                    packInfo.times3 - packInfo.times2,
+                    packInfo.times3 - block.timestamp
+                )
             );
 
-            refundValue = packInfo.price;
+            require(success, "Get time percent failed");
+
+            uint8 percent = abi.decode(resultPercent, (uint8));
+            refundValue = _percentValue(packInfo.price, percent);
         }
 
         buyList[msg.sender].hasCount--;
@@ -129,7 +101,7 @@ contract BSC_SubscriptionCommander is Subscription, Commander {
         emit requestRefundEvent(address(this), msg.sender, 1, value, swap);
     }
 
-    function calculate() external onCalculateTime checkLive {
+    function calculate() external onCalculateTime {
         uint256 balance = 0;
 
         if (block.timestamp > packInfo.times3 + 2592000) {
@@ -160,26 +132,6 @@ contract BSC_SubscriptionCommander is Subscription, Commander {
         emit calculateEvent(address(this), owner, balance);
     }
 
-    function disabledPackRefund(address[] calldata _addrList) external onlyManager(msg.sender) {
-        require(disabledPack, "N02 - Not disabled pack");
-        require(block.timestamp > disabledTime + 15552000, "N03 - Not available time for refund");
-
-        uint256[] memory values = new uint256[](_addrList.length);
-        uint256[] memory swaps = new uint256[](_addrList.length);
-        uint refundValue = _percentValue(packInfo.price, 95);
-
-        for (uint i = 0; i < _addrList.length; i++) {
-            address _to = _addrList[i];
-            buyList[_to].hasCount--;
-            (values[i], swaps[i]) = _refund(_to, refundValue, 10);
-        }
-
-        emit disabledPackRefundUser(address(this), _addrList, values, swaps);
-
-        _transfer(packInfo.tokenType, msg.sender, _getBalance(packInfo.tokenType));
-        emit disabledPackRefundEvent(address(this));
-    }
-
     function changeTotal(uint32 count) external payable onlyOwner {
         require(packInfo.total - quantity <= count, "TC01 - Less than the remaining quantity");
         require(count <= 1000, "C05 - Limit count over");
@@ -207,20 +159,12 @@ contract BSC_SubscriptionCommander is Subscription, Commander {
         return quantity;
     }
 
-    function viewIsDisabled() external view returns (bool) {
-        return disabledPack;
-    }
-
     function viewUser(address userAddr) external view returns (pack memory) {
         return buyList[userAddr];
     }
 
     function viewVersion() external view returns (uint8) {
         return ver;
-    }
-
-    function viewNoshowTime() external view returns (uint) {
-        return disabledTime;
     }
 
     function _percentValue(uint value, uint8 percent) private view returns (uint) {
