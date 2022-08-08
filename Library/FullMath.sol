@@ -204,7 +204,7 @@ contract FullMath {
         unchecked {
             require(x > 0, "x variable should be bigger than zero");
 
-            uint256 result = 0;
+            uint256 result;
 
             if (x >= 0x100000000000000000000000000000000) {
                 x >>= 128;

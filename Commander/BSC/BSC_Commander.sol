@@ -43,7 +43,7 @@ contract Commander is WrapAddresses {
     }
 
     function getCountFee(uint count) external view returns (uint256) {
-        uint8 n = 0;
+        uint8 n;
 
         if (count > 10) {
             while (count >= 10) {
@@ -82,7 +82,7 @@ contract Commander is WrapAddresses {
     }
 
     function _getBalance(uint16 tokenType) internal view returns (uint256) {
-        uint balance = 0;
+        uint balance;
 
         if (tokenType == 100) {
             balance = address(this).balance;
@@ -118,7 +118,7 @@ contract Commander is WrapAddresses {
     }
 
     function checkFee(uint count) internal {
-        uint8 n = 0;
+        uint8 n;
 
         if (count > 10) {
             while (count >= 10) {

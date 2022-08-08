@@ -66,7 +66,7 @@ contract KLA_TicketCommander is Ticket, KLA_Commander {
     function give(address[] memory toAddr) external canUse(toAddr.length) {
         buyList[msg.sender].hasCount = buyList[msg.sender].hasCount - uint32(toAddr.length);
 
-        for (uint i = 0; i < toAddr.length; i++) {
+        for (uint i; i < toAddr.length; i++) {
             buyList[toAddr[i]].hasCount++;
         }
 
@@ -91,7 +91,7 @@ contract KLA_TicketCommander is Ticket, KLA_Commander {
         haltInEmergency
         requestLimit(1 minutes)
     {
-        uint256 refundValue = 0;
+        uint256 refundValue;
         buyList[msg.sender].hasCount = buyList[msg.sender].hasCount - _count;
 
         if (block.timestamp < packInfo.times1) {

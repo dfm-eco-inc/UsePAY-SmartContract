@@ -23,7 +23,7 @@ contract Ticket is WrapAddresses {
 
     bool internal isCalculated = false;
     uint8 internal immutable ver = 1;
-    uint32 internal totalUsedCount = 0;
+    uint32 internal totalUsedCount;
     uint32 internal quantity;
     address internal owner;
 

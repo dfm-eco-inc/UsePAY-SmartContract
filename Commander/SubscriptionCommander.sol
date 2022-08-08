@@ -65,7 +65,7 @@ contract SubscriptionCommander is Subscription, Commander {
     function give(address[] memory toAddr) external canUse {
         buyList[msg.sender].hasCount = buyList[msg.sender].hasCount - uint32(toAddr.length);
 
-        for (uint i = 0; i < toAddr.length; i++) {
+        for (uint i; i < toAddr.length; i++) {
             buyList[toAddr[i]].hasCount++;
         }
 
@@ -75,7 +75,7 @@ contract SubscriptionCommander is Subscription, Commander {
     function requestRefund() external canUse blockReEntry haltInEmergency requestLimit(1 minutes) {
         require(block.timestamp < packInfo.times3, "N04 - Not available time for refund");
 
-        uint refundValue = 0;
+        uint refundValue;
 
         if (block.timestamp < packInfo.times2) {
             quantity++;
@@ -102,7 +102,7 @@ contract SubscriptionCommander is Subscription, Commander {
     }
 
     function calculate() external onCalculateTime {
-        uint256 balance = 0;
+        uint256 balance;
 
         if (block.timestamp > packInfo.times3 + 2592000) {
             checkManager(msg.sender);
@@ -187,10 +187,10 @@ contract SubscriptionCommander is Subscription, Commander {
         uint value,
         uint8 percent
     ) private returns (uint256, uint256) {
-        uint refundValue = 0;
-        uint refundPercentValue = 0;
-        uint swapValue = 0;
-        uint feeValue = 0;
+        uint refundValue;
+        uint refundPercentValue;
+        uint swapValue;
+        uint feeValue;
 
         if (packInfo.tokenType == 100) {
             refundValue = _percentValue(value, 100 - percent);

@@ -24,7 +24,7 @@ contract Addresses {
     function setAddresses(uint16[] memory _index, address[] memory _addr) external onlyManager {
         require(_index.length == _addr.length, "not same _index,_addr length");
 
-        for (uint16 i = 0; i < _index.length; i++) {
+        for (uint16 i; i < _index.length; i++) {
             addresses[_index[i]] = _addr[i];
         }
 
@@ -38,7 +38,7 @@ contract Addresses {
     function checkManager(address _addr) public view returns (bool) {
         require(_addr != address(0), "AD01 - Not available for manager");
 
-        for (uint8 i = 0; i < 100; i++) {
+        for (uint8 i; i < 100; i++) {
             if (addresses[i] == _addr) {
                 return true;
             }

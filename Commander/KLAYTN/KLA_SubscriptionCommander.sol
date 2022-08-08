@@ -59,7 +59,7 @@ contract KLA_SubscriptionCommander is Subscription, KLA_Commander {
     function give(address[] memory toAddr) external canUse {
         buyList[msg.sender].hasCount = buyList[msg.sender].hasCount - uint32(toAddr.length);
 
-        for (uint i = 0; i < toAddr.length; i++) {
+        for (uint i; i < toAddr.length; i++) {
             buyList[toAddr[i]].hasCount++;
         }
 
@@ -67,7 +67,7 @@ contract KLA_SubscriptionCommander is Subscription, KLA_Commander {
     }
 
     function requestRefund() external canUse blockReEntry haltInEmergency requestLimit(1 minutes) {
-        uint refundValue = 0;
+        uint refundValue;
 
         if (block.timestamp < packInfo.times2) {
             quantity++;
@@ -93,7 +93,7 @@ contract KLA_SubscriptionCommander is Subscription, KLA_Commander {
     }
 
     function calculate() external onCalculateTime {
-        uint256 balance = 0;
+        uint256 balance;
 
         if (block.timestamp > packInfo.times3 + 2592000) {
             checkManager(msg.sender);
