@@ -35,7 +35,10 @@ contract KLA_TicketCommander is Ticket, KLA_Commander {
             "B01 - Not available time for buy"
         );
         require(quantity - count >= 0, "B04 - Not enough quentity");
-        require(count <= packInfo.maxCount, "B05 - Exceeding the available quantity");
+        require(
+            buyList[msg.sender].hasCount + count <= packInfo.maxCount,
+            "B05 - Exceeding the available quantity"
+        );
         _;
     }
 
