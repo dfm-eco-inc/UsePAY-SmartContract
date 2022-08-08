@@ -124,12 +124,12 @@ contract BSC_TicketCommander is Ticket, Commander {
         require(!isCalculated, "CT03 - Already calculated pack");
 
         uint quantityCount = packInfo.total - quantity - totalUsedCount;
-        uint qunaityValue = _percentValue(packInfo.price, packInfo.noshowValue) * quantityCount;
+        uint quantityValue = _percentValue(packInfo.price, packInfo.noshowValue) * quantityCount;
 
         isCalculated = true;
-        _transfer(packInfo.tokenType, owner, qunaityValue);
+        _transfer(packInfo.tokenType, owner, quantityValue);
 
-        emit calculateEvent(address(this), owner, qunaityValue);
+        emit calculateEvent(address(this), owner, quantityValue);
     }
 
     function changeTotal(uint32 count) external payable onlyOwner {

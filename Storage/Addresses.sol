@@ -8,7 +8,7 @@ contract Addresses {
     event setAddressesEvent(address[] newAddresses, uint16[] idxs);
 
     modifier onlyManager() {
-        require(checkManger(msg.sender), "This address is not manager");
+        require(checkManager(msg.sender), "This address is not manager");
         _;
     }
 
@@ -35,7 +35,7 @@ contract Addresses {
         return addresses[_index];
     }
 
-    function checkManger(address _addr) public view returns (bool) {
+    function checkManager(address _addr) public view returns (bool) {
         require(_addr != address(0), "AD01 - Not available for manager");
 
         for (uint8 i = 0; i < 100; i++) {
