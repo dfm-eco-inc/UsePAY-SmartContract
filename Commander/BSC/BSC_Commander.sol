@@ -3,13 +3,11 @@ pragma solidity 0.8.9;
 
 import "../../Storage/WrapAddresses.sol";
 import "../../Library/AggregatorV3Interface.sol";
-import "../EmergencyStop.sol";
 
 contract Commander is WrapAddresses {
     bool private reEntry = false;
     uint private reqeustTime = block.timestamp;
     AggregatorV3Interface internal priceFeed;
-    IEmergencyStop internal contractStop;
 
     event giveEvent(address indexed pack, address fromAddr, address[] toAddr);
     event getChainlinkDataFeedAddressEvent(address dataFeed);
@@ -22,7 +20,7 @@ contract Commander is WrapAddresses {
     }
 
     modifier haltInEmergency() {
-        require(!contractStop.getContractStopped(), "function not allowed");
+        require(!_isHalted(), "function not allowed");
         _;
     }
 
@@ -30,16 +28,6 @@ contract Commander is WrapAddresses {
         require(block.timestamp >= reqeustTime, "Too many request");
         reqeustTime = block.timestamp + t;
         _;
-    }
-
-    constructor() {
-        // Data Feeds Addresses : https://docs.chain.link/docs/reference-contracts
-        address dataFeedAddress = 0x2514895c72f50D8bd4B4F9b1110F0D6bD2c97526;
-        priceFeed = AggregatorV3Interface(dataFeedAddress);
-        emit getChainlinkDataFeedAddressEvent(dataFeedAddress);
-
-        // Need to change when deploying this contract
-        contractStop = IEmergencyStop(0x5B38Da6a701c568545dCfcB03FcB875f56beddC4);
     }
 
     function getCountFee(uint count) external view returns (uint256) {
@@ -57,8 +45,9 @@ contract Commander is WrapAddresses {
         }
     }
 
-    // Returning value of WEI of the native token
+    // Returning value of WEI of the native token (Data Feeds Addresses : https://docs.chain.link/docs/reference-contracts)
     function getPrice() public view returns (uint256) {
+        AggregatorV3Interface priceFeed = AggregatorV3Interface(getAddress(7001));
         (, int price, , , ) = priceFeed.latestRoundData();
         uint256 totalDecimal = 10**(18 + priceFeed.decimals());
 
@@ -130,6 +119,15 @@ contract Commander is WrapAddresses {
         } else {
             require(msg.value > getPrice(), "C01 - Not enough fee");
         }
+    }
+
+    function _isHalted() internal view returns (bool) {
+        (bool success, bytes memory resultBytes) = getAddress(7000).staticcall(
+            abi.encodeWithSignature("getContractStopped()")
+        );
+
+        require(success, "Get Contract Stopped failed");
+        return abi.decode(resultBytes, (bool));
     }
 
     function getBalance(address addr) internal view returns (uint256) {

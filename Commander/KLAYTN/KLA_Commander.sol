@@ -2,10 +2,8 @@
 pragma solidity 0.8.9;
 
 import "../../Storage/WrapAddresses.sol";
-import "../EmergencyStop.sol";
 
 contract KLA_Commander is WrapAddresses {
-    IEmergencyStop internal contractStop;
     uint private reqeustTime = block.timestamp;
     bool private reEntry = false;
 
@@ -19,7 +17,7 @@ contract KLA_Commander is WrapAddresses {
     }
 
     modifier haltInEmergency() {
-        require(!contractStop.getContractStopped(), "function not allowed");
+        require(!_isHalted(), "function not allowed");
         _;
     }
 
@@ -27,11 +25,6 @@ contract KLA_Commander is WrapAddresses {
         require(block.timestamp >= reqeustTime, "Too many request");
         reqeustTime = block.timestamp + t;
         _;
-    }
-
-    constructor() {
-        // Need to change when deploying this contract
-        contractStop = IEmergencyStop(0x5B38Da6a701c568545dCfcB03FcB875f56beddC4);
     }
 
     function getCountFee(uint count) external view returns (uint256) {
@@ -104,6 +97,15 @@ contract KLA_Commander is WrapAddresses {
         } else {
             require(msg.value > getPrice(), "C01 - Not enough fee");
         }
+    }
+
+    function _isHalted() internal view returns (bool) {
+        (bool success, bytes memory resultBytes) = getAddress(7000).staticcall(
+            abi.encodeWithSignature("getContractStopped()")
+        );
+
+        require(success, "Get Contract Stopped failed");
+        return abi.decode(resultBytes, (bool));
     }
 
     function getBalance(address addr) internal view returns (uint256) {
