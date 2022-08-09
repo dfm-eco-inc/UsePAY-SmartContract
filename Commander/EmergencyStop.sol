@@ -3,12 +3,6 @@ pragma solidity 0.8.9;
 
 import "../Storage/WrapAddresses.sol";
 
-interface IEmergencyStop {
-    function getContractStopped() external pure returns (bool);
-
-    function toggleContractStopped() external;
-}
-
 contract EmergencyStop is WrapAddresses {
     struct MultiSign {
         uint count;
