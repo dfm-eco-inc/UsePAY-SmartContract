@@ -7,7 +7,6 @@ import "../../Library/AggregatorV3Interface.sol";
 contract Commander is WrapAddresses {
     bool private reEntry = false;
     uint private reqeustTime = block.timestamp;
-    AggregatorV3Interface internal priceFeed;
 
     event giveEvent(address indexed pack, address fromAddr, address[] toAddr);
     event getChainlinkDataFeedAddressEvent(address dataFeed);
