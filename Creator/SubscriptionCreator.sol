@@ -5,7 +5,7 @@ import "../Pack/SubscriptionPack.sol";
 import "../Commander/Commander.sol";
 
 contract SubscriptionCreator is Subscription, Commander {
-    event createSubscriptionEvent(address indexed pack, uint256 createNum, PackInfo packInfo); // 0: pack indexed, 1 : reference value , 2 : packInfo
+    event createSubscriptionEvent(address indexed pack, uint256 createNum, PackInfo packInfo);
 
     function createSubscription(PackInfo calldata _packInfo, uint256 createNum) external payable {
         require(_packInfo.total <= 1000, "C05 - Limit count over");

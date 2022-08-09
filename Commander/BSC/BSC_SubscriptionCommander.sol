@@ -7,14 +7,14 @@ import "./BSC_Commander.sol";
 contract BSC_SubscriptionCommander is Subscription, Commander {
     event calculateEvent(address indexed pack, address owner, uint256 value);
     event changeTotalEvent(address indexed, uint256 _before, uint256 _after);
-    event buyEvent(address indexed pack, uint256 buyNum, address buyer); // 0: pack indexed, 1: buyer, 2: count
+    event buyEvent(address indexed pack, uint256 buyNum, address buyer);
     event requestRefundEvent(
         address indexed pack,
         address buyer,
         uint256 num,
         uint256 money,
         uint256 swap
-    ); // 0: pack indexed, 1: buyer, 2: count
+    );
 
     modifier onlyOwner() {
         require(msg.sender == owner, "O01 - Only for issuer");

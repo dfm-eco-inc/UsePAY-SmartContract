@@ -5,9 +5,9 @@ import "../../Pack/TicketPack.sol";
 import "./KLA_Commander.sol";
 
 contract KLA_TicketCommander is Ticket, KLA_Commander {
-    event buyEvent(address indexed pack, uint256 buyNum, address buyer, uint256 count); // 0: pack indexed, 1: buyer, 2: count
-    event useEvent(address indexed pack, address user, uint256 count); // 0: pack indexed, 1: buyer, 2: count
-    event requestRefundEvent(address indexed pack, address buyer, uint256 count, uint256 money); // 0: pack indexed, 1: buyer, 2: count
+    event buyEvent(address indexed pack, uint256 buyNum, address buyer, uint256 count);
+    event useEvent(address indexed pack, address user, uint256 count);
+    event requestRefundEvent(address indexed pack, address buyer, uint256 count, uint256 money);
     event calculateEvent(address indexed, address owner, uint256 value);
     event changeTotalEvent(address indexed, uint256 _before, uint256 _after);
 

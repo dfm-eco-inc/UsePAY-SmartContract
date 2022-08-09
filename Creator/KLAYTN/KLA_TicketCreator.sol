@@ -5,7 +5,7 @@ import "../../Pack/TicketPack.sol";
 import "../../Commander/KLAYTN/KLA_Commander.sol";
 
 contract KLA_TicketCreator is Ticket, KLA_Commander {
-    event createTicketEvent(address indexed pack, uint256 createNum, PackInfo packInfo); // 0: pack indexed, 1 : reference value , 2 : packInfo
+    event createTicketEvent(address indexed pack, uint256 createNum, PackInfo packInfo);
 
     function createTicket(PackInfo calldata _packInfo, uint256 _createNum) external payable {
         require(_packInfo.total <= 1000, "C05 - Limit count over");

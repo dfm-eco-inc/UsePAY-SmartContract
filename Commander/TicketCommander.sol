@@ -5,17 +5,17 @@ import "../Pack/TicketPack.sol";
 import "./Commander.sol";
 
 contract TicketCommander is Ticket, Commander {
-    event buyEvent(address indexed pack, uint256 buyNum, address buyer, uint256 count); // 0: pack indexed, 1: buyer, 2: count
+    event buyEvent(address indexed pack, uint256 buyNum, address buyer, uint256 count);
     event changeTotalEvent(address indexed, uint256 _before, uint256 _after);
     event calculateEvent(address indexed, address owner, uint256 value);
-    event useEvent(address indexed pack, address user, uint256 count); // 0: pack indexed, 1: buyer, 2: count
+    event useEvent(address indexed pack, address user, uint256 count);
     event requestRefundEvent(
         address indexed pack,
         address buyer,
         uint256 count,
         uint256 money,
         uint256 swap
-    ); // 0: pack indexed, 1: buyer, 2: count
+    );
 
     modifier onlyOwner() {
         require(msg.sender == owner, "O01 - Only for issuer");
