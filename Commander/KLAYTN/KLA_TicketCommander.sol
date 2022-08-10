@@ -5,11 +5,11 @@ import "../../Pack/TicketPack.sol";
 import "./KLA_Commander.sol";
 
 contract KLA_TicketCommander is Ticket, KLA_Commander {
-    event buyEvent(address indexed pack, uint256 buyNum, address buyer, uint256 count);
-    event useEvent(address indexed pack, address user, uint256 count);
-    event requestRefundEvent(address indexed pack, address buyer, uint256 count, uint256 money);
-    event calculateEvent(address indexed, address owner, uint256 value);
-    event changeTotalEvent(address indexed, uint256 _before, uint256 _after);
+    event BuyEvent(address indexed pack, uint256 buyNum, address buyer, uint256 count);
+    event UseEvent(address indexed pack, address user, uint256 count);
+    event RequestRefundEvent(address indexed pack, address buyer, uint256 count, uint256 money);
+    event CalculateEvent(address indexed, address owner, uint256 value);
+    event ChangeTotalEvent(address indexed, uint256 _before, uint256 _after);
 
     modifier onlyOwner() {
         require(msg.sender == owner, "O01 - Only for issuer");
@@ -60,7 +60,7 @@ contract KLA_TicketCommander is Ticket, KLA_Commander {
 
         _buy(count, msg.sender);
 
-        emit buyEvent(address(this), buyNum, msg.sender, count);
+        emit BuyEvent(address(this), buyNum, msg.sender, count);
     }
 
     function give(address[] memory toAddr) external canUse(toAddr.length) {
@@ -70,7 +70,7 @@ contract KLA_TicketCommander is Ticket, KLA_Commander {
             buyList[toAddr[i]].hasCount++;
         }
 
-        emit giveEvent(address(this), msg.sender, toAddr);
+        emit GiveEvent(address(this), msg.sender, toAddr);
     }
 
     function use(uint32 _count) external canUse(_count) {
@@ -81,7 +81,7 @@ contract KLA_TicketCommander is Ticket, KLA_Commander {
 
         _transfer(packInfo.tokenType, owner, packInfo.price * (_count));
 
-        emit useEvent(address(this), msg.sender, _count);
+        emit UseEvent(address(this), msg.sender, _count);
     }
 
     function requestRefund(uint32 _count)
@@ -109,7 +109,7 @@ contract KLA_TicketCommander is Ticket, KLA_Commander {
             (refundValue) = _refund(msg.sender, value);
         }
 
-        emit requestRefundEvent(address(this), msg.sender, _count, refundValue);
+        emit RequestRefundEvent(address(this), msg.sender, _count, refundValue);
     }
 
     function calculate() external onlyOwner onCalculateTime {
@@ -121,7 +121,7 @@ contract KLA_TicketCommander is Ticket, KLA_Commander {
         isCalculated = true;
         _transfer(packInfo.tokenType, owner, quantityValue);
 
-        emit calculateEvent(address(this), owner, quantityValue);
+        emit CalculateEvent(address(this), owner, quantityValue);
     }
 
     function changeTotal(uint32 count) external payable onlyOwner {
@@ -136,7 +136,7 @@ contract KLA_TicketCommander is Ticket, KLA_Commander {
         quantity = quantity - (packInfo.total - count);
         packInfo.total = count;
 
-        emit changeTotalEvent(address(this), packInfo.total, count);
+        emit ChangeTotalEvent(address(this), packInfo.total, count);
     }
 
     function viewInfo() external view returns (PackInfo memory) {

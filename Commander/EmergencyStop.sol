@@ -14,7 +14,7 @@ contract EmergencyStop is WrapAddresses {
     uint private immutable numConfirmationsRequired;
     MultiSign internal multiSign;
 
-    event toggleContractStoppedEvent(bool contractStopped);
+    event ToggleContractStoppedEvent(bool contractStopped);
 
     constructor() {
         numConfirmationsRequired = viewNumOfConfirmation();
@@ -56,7 +56,7 @@ contract EmergencyStop is WrapAddresses {
                 multiSign.confirmers[i] = address(0);
             }
 
-            emit toggleContractStoppedEvent(contractStopped);
+            emit ToggleContractStoppedEvent(contractStopped);
         }
     }
 

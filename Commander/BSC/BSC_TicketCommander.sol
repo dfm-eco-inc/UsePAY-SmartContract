@@ -5,11 +5,11 @@ import "../../Pack/Pack.sol";
 import "./BSC_Commander.sol";
 
 contract BSC_TicketCommander is Ticket, Commander {
-    event buyEvent(address indexed pack, uint256 buyNum, address buyer, uint256 count);
-    event useEvent(address indexed pack, address user, uint256 count);
-    event changeTotalEvent(address indexed, uint256 _before, uint256 _after);
-    event calculateEvent(address indexed, address owner, uint256 value);
-    event requestRefundEvent(
+    event BuyEvent(address indexed pack, uint256 buyNum, address buyer, uint256 count);
+    event UseEvent(address indexed pack, address user, uint256 count);
+    event ChangeTotalEvent(address indexed, uint256 _before, uint256 _after);
+    event CalculateEvent(address indexed, address owner, uint256 value);
+    event RequestRefundEvent(
         address indexed pack,
         address buyer,
         uint256 count,
@@ -66,7 +66,7 @@ contract BSC_TicketCommander is Ticket, Commander {
 
         _buy(count, msg.sender);
 
-        emit buyEvent(address(this), buyNum, msg.sender, count);
+        emit BuyEvent(address(this), buyNum, msg.sender, count);
     }
 
     function give(address[] memory toAddr) external canUse(toAddr.length) {
@@ -76,7 +76,7 @@ contract BSC_TicketCommander is Ticket, Commander {
             buyList[toAddr[i]].hasCount++;
         }
 
-        emit giveEvent(address(this), msg.sender, toAddr);
+        emit GiveEvent(address(this), msg.sender, toAddr);
     }
 
     function use(uint32 _count) external canUse(_count) {
@@ -87,7 +87,7 @@ contract BSC_TicketCommander is Ticket, Commander {
 
         _transfer(packInfo.tokenType, owner, packInfo.price * (_count));
 
-        emit useEvent(address(this), msg.sender, _count);
+        emit UseEvent(address(this), msg.sender, _count);
     }
 
     function requestRefund(uint32 _count)
@@ -117,7 +117,7 @@ contract BSC_TicketCommander is Ticket, Commander {
             (refundValue, swapValue) = _refund(msg.sender, value, 5);
         }
 
-        emit requestRefundEvent(address(this), msg.sender, _count, refundValue, swapValue);
+        emit RequestRefundEvent(address(this), msg.sender, _count, refundValue, swapValue);
     }
 
     function calculate() external onlyOwner onCalculateTime {
@@ -129,7 +129,7 @@ contract BSC_TicketCommander is Ticket, Commander {
         isCalculated = true;
         _transfer(packInfo.tokenType, owner, quantityValue);
 
-        emit calculateEvent(address(this), owner, quantityValue);
+        emit CalculateEvent(address(this), owner, quantityValue);
     }
 
     function changeTotal(uint32 count) external payable onlyOwner {
@@ -144,7 +144,7 @@ contract BSC_TicketCommander is Ticket, Commander {
         quantity = quantity - (packInfo.total - count);
         packInfo.total = count;
 
-        emit changeTotalEvent(address(this), packInfo.total, count);
+        emit ChangeTotalEvent(address(this), packInfo.total, count);
     }
 
     function viewInfo() external view returns (PackInfo memory) {

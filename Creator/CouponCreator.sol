@@ -5,7 +5,7 @@ import "../Pack/CouponPack.sol";
 import "../Commander/Commander.sol";
 
 contract CouponCreator is Commander, Coupon {
-    event createCouponEvent(address indexed pack, uint256 createNum, PackInfo packInfo);
+    event CreateCouponEvent(address indexed pack, uint256 createNum, PackInfo packInfo);
 
     function createCoupon(PackInfo calldata _packInfo, uint256 createNum) external payable {
         require(_packInfo.total <= 3000, "C05 - Limit count over");
@@ -15,7 +15,7 @@ contract CouponCreator is Commander, Coupon {
         _swap(msg.sender, msg.value);
         CouponPack pers = new CouponPack(_packInfo, msg.sender);
 
-        emit createCouponEvent(address(pers), createNum, _packInfo);
+        emit CreateCouponEvent(address(pers), createNum, _packInfo);
     }
 
     function viewVersion() external view returns (uint8) {

@@ -13,10 +13,10 @@ contract SubscriptionCommander is Subscription, Commander {
     uint private immutable numConfirmationsRequired;
     MultiSign private multiSign;
 
-    event calculateEvent(address indexed pack, address owner, uint256 value);
-    event changeTotalEvent(address indexed, uint256 _before, uint256 _after);
-    event buyEvent(address indexed pack, uint256 buyNum, address buyer);
-    event requestRefundEvent(
+    event CalculateEvent(address indexed pack, address owner, uint256 value);
+    event ChangeTotalEvent(address indexed, uint256 _before, uint256 _after);
+    event BuyEvent(address indexed pack, uint256 buyNum, address buyer);
+    event RequestRefundEvent(
         address indexed pack,
         address buyer,
         uint256 num,
@@ -71,7 +71,7 @@ contract SubscriptionCommander is Subscription, Commander {
 
         _buy(msg.sender);
 
-        emit buyEvent(address(this), buyNum, msg.sender);
+        emit BuyEvent(address(this), buyNum, msg.sender);
     }
 
     function give(address[] memory toAddr) external canUse {
@@ -81,7 +81,7 @@ contract SubscriptionCommander is Subscription, Commander {
             buyList[toAddr[i]].hasCount++;
         }
 
-        emit giveEvent(address(this), msg.sender, toAddr);
+        emit GiveEvent(address(this), msg.sender, toAddr);
     }
 
     function requestRefund() external canUse blockReEntry haltInEmergency requestLimit(1 minutes) {
@@ -110,7 +110,7 @@ contract SubscriptionCommander is Subscription, Commander {
         buyList[msg.sender].hasCount--;
         (uint value, uint swap) = _refund(msg.sender, refundValue, 0);
 
-        emit requestRefundEvent(address(this), msg.sender, 1, value, swap);
+        emit RequestRefundEvent(address(this), msg.sender, 1, value, swap);
     }
 
     function confirmCalculate() external haltInEmergency onlyManager(msg.sender) {
@@ -163,7 +163,7 @@ contract SubscriptionCommander is Subscription, Commander {
                     multiSign.confirmers[i] = address(0);
                 }
 
-                emit calculateEvent(address(this), owner, balance);
+                emit CalculateEvent(address(this), owner, balance);
             }
         } else {
             require(msg.sender == owner, "you are not owner");
@@ -176,7 +176,7 @@ contract SubscriptionCommander is Subscription, Commander {
 
             _transfer(packInfo.tokenType, owner, balance);
 
-            emit calculateEvent(address(this), owner, balance);
+            emit CalculateEvent(address(this), owner, balance);
         }
     }
 
@@ -192,7 +192,7 @@ contract SubscriptionCommander is Subscription, Commander {
         quantity = quantity - (packInfo.total - count);
         packInfo.total = count;
 
-        emit changeTotalEvent(address(this), packInfo.total, count);
+        emit ChangeTotalEvent(address(this), packInfo.total, count);
     }
 
     function viewInfo() external view returns (PackInfo memory) {

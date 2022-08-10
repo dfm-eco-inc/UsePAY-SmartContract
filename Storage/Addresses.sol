@@ -15,10 +15,10 @@ contract Addresses {
     mapping(uint16 => address) private addresses;
     MultiSign private multiSign;
 
-    event startSetAddressesEvent(address starterAddress, address[] newAddress, uint16[] idx);
-    event cancelSetAddressesEvent(address cancelerAddress);
-    event confirmSetAddressesEvent(address confirmerAddress);
-    event launchSetAddressesEvent(address launcherAddress, address[] newAddress, uint16[] idx);
+    event StartSetAddressesEvent(address starterAddress, address[] newAddress, uint16[] idx);
+    event CancelSetAddressesEvent(address cancelerAddress);
+    event ConfirmSetAddressesEvent(address confirmerAddress);
+    event LaunchSetAddressesEvent(address launcherAddress, address[] newAddress, uint16[] idx);
 
     modifier onlyManager() {
         require(checkManager(msg.sender), "This address is not manager ");
@@ -56,7 +56,7 @@ contract Addresses {
         multiSign.addr = _addr;
         multiSign.count = 1;
 
-        emit startSetAddressesEvent(msg.sender, _addr, _index);
+        emit StartSetAddressesEvent(msg.sender, _addr, _index);
     }
 
     function cancelSetAddresses() external onlyManager {
@@ -70,7 +70,7 @@ contract Addresses {
             }
         }
 
-        emit cancelSetAddressesEvent(msg.sender);
+        emit CancelSetAddressesEvent(msg.sender);
     }
 
     function confirmSetAddresses() external onlyManager {
@@ -95,7 +95,7 @@ contract Addresses {
             multiSign.unlockTimestamp = uint32(block.timestamp + unlockSeconds);
         }
 
-        emit confirmSetAddressesEvent(msg.sender);
+        emit ConfirmSetAddressesEvent(msg.sender);
     }
 
     function launchSetAddresses() external onlyManager {
@@ -113,7 +113,7 @@ contract Addresses {
             multiSign.confirmers[i] = address(0);
         }
 
-        emit launchSetAddressesEvent(msg.sender, multiSign.addr, multiSign.index);
+        emit LaunchSetAddressesEvent(msg.sender, multiSign.addr, multiSign.index);
     }
 
     function viewConfirmSetAddressStatus() external view returns (MultiSign memory) {

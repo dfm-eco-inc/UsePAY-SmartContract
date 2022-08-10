@@ -5,7 +5,7 @@ import "../../Pack/CouponPack.sol";
 import "./KLA_Commander.sol";
 
 contract KLA_CouponCommander is KLA_Commander, Coupon {
-    event changeTotalEvent(address indexed, uint256 _before, uint256 _after);
+    event ChangeTotalEvent(address indexed, uint256 _before, uint256 _after);
 
     modifier onlyOwner() {
         require(msg.sender == owner, "O01 - Only for issuer");
@@ -24,7 +24,7 @@ contract KLA_CouponCommander is KLA_Commander, Coupon {
         quantity = quantity - (packInfo.total - count);
         packInfo.total = count;
 
-        emit changeTotalEvent(address(this), packInfo.total, count);
+        emit ChangeTotalEvent(address(this), packInfo.total, count);
     }
 
     function viewInfo() external view returns (PackInfo memory) {

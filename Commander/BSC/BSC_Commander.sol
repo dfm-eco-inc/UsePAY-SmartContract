@@ -8,8 +8,8 @@ contract Commander is WrapAddresses {
     bool private reEntry = false;
     uint private reqeustTime = block.timestamp;
 
-    event giveEvent(address indexed pack, address fromAddr, address[] toAddr);
-    event getChainlinkDataFeedAddressEvent(address dataFeed);
+    event GiveEvent(address indexed pack, address fromAddr, address[] toAddr);
+    event GetChainlinkDataFeedAddressEvent(address dataFeed);
 
     modifier blockReEntry() {
         require(!reEntry, "Not allowed");

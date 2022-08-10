@@ -5,7 +5,7 @@ import "../Pack/CouponPack.sol";
 import "./Commander.sol";
 
 contract CouponCommander is Commander, Coupon {
-    event changeTotalEvent(address indexed, uint256 _before, uint256 _after);
+    event ChangeTotalEvent(address indexed, uint256 _before, uint256 _after);
 
     modifier onlyOwner() {
         require(msg.sender == owner, "O01 - Only for issuer");
@@ -24,7 +24,7 @@ contract CouponCommander is Commander, Coupon {
         quantity = quantity - (packInfo.total - count);
         packInfo.total = count;
 
-        emit changeTotalEvent(address(this), packInfo.total, count);
+        emit ChangeTotalEvent(address(this), packInfo.total, count);
     }
 
     function viewInfo() external view returns (PackInfo memory) {

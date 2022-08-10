@@ -5,7 +5,7 @@ import "../../Pack/SubscriptionPack.sol";
 import "../../Commander/BSC/BSC_Commander.sol";
 
 contract BSC_SubscriptionCreator is Subscription, Commander {
-    event createSubscriptionEvent(address indexed pack, uint256 createNum, PackInfo packInfo);
+    event CreateSubscriptionEvent(address indexed pack, uint256 createNum, PackInfo packInfo);
 
     function createSubscription(PackInfo calldata _packInfo, uint256 _createNum) external payable {
         require(_packInfo.total <= 1000, "C05 - Limit count over");
@@ -15,7 +15,7 @@ contract BSC_SubscriptionCreator is Subscription, Commander {
         _swap(101, msg.sender, msg.value);
         SubscriptionPack pers = new SubscriptionPack(_packInfo, msg.sender);
 
-        emit createSubscriptionEvent(address(pers), _createNum, _packInfo);
+        emit CreateSubscriptionEvent(address(pers), _createNum, _packInfo);
     }
 
     function viewVersion() external view returns (uint8) {

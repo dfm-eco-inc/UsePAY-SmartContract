@@ -13,10 +13,10 @@ contract KLA_SubscriptionCommander is Subscription, KLA_Commander {
     uint private immutable numConfirmationsRequired;
     MultiSign private multiSign;
 
-    event buyEvent(address indexed pack, uint256 buyNum, address buyer);
-    event requestRefundEvent(address indexed pack, address buyer, uint256 num, uint256 money);
-    event calculateEvent(address indexed pack, address owner, uint256 value);
-    event changeTotalEvent(address indexed, uint256 _before, uint256 _after);
+    event BuyEvent(address indexed pack, uint256 buyNum, address buyer);
+    event RequestRefundEvent(address indexed pack, address buyer, uint256 num, uint256 money);
+    event CalculateEvent(address indexed pack, address owner, uint256 value);
+    event ChangeTotalEvent(address indexed, uint256 _before, uint256 _after);
 
     modifier onlyOwner() {
         require(msg.sender == owner, "O01 - Only for issuer");
@@ -65,7 +65,7 @@ contract KLA_SubscriptionCommander is Subscription, KLA_Commander {
 
         _buy(msg.sender);
 
-        emit buyEvent(address(this), buyNum, msg.sender);
+        emit BuyEvent(address(this), buyNum, msg.sender);
     }
 
     function give(address[] memory toAddr) external canUse {
@@ -75,7 +75,7 @@ contract KLA_SubscriptionCommander is Subscription, KLA_Commander {
             buyList[toAddr[i]].hasCount++;
         }
 
-        emit giveEvent(address(this), msg.sender, toAddr);
+        emit GiveEvent(address(this), msg.sender, toAddr);
     }
 
     function requestRefund() external canUse blockReEntry haltInEmergency requestLimit(1 minutes) {
@@ -101,7 +101,7 @@ contract KLA_SubscriptionCommander is Subscription, KLA_Commander {
         buyList[msg.sender].hasCount--;
         _refund(msg.sender, refundValue);
 
-        emit requestRefundEvent(address(this), msg.sender, 1, refundValue);
+        emit RequestRefundEvent(address(this), msg.sender, 1, refundValue);
     }
 
     function confirmCalculate() external haltInEmergency onlyManager(msg.sender) {
@@ -154,7 +154,7 @@ contract KLA_SubscriptionCommander is Subscription, KLA_Commander {
                     multiSign.confirmers[i] = address(0);
                 }
 
-                emit calculateEvent(address(this), owner, balance);
+                emit CalculateEvent(address(this), owner, balance);
             }
         } else {
             require(msg.sender == owner, "you are not owner");
@@ -167,7 +167,7 @@ contract KLA_SubscriptionCommander is Subscription, KLA_Commander {
 
             _transfer(packInfo.tokenType, owner, balance);
 
-            emit calculateEvent(address(this), owner, balance);
+            emit CalculateEvent(address(this), owner, balance);
         }
     }
 
@@ -183,7 +183,7 @@ contract KLA_SubscriptionCommander is Subscription, KLA_Commander {
         quantity = quantity - (packInfo.total - count);
         packInfo.total = count;
 
-        emit changeTotalEvent(address(this), packInfo.total, count);
+        emit ChangeTotalEvent(address(this), packInfo.total, count);
     }
 
     function viewInfo() external view returns (PackInfo memory) {

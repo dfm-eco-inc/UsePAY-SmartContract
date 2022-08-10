@@ -27,7 +27,7 @@
     "state-visibility": "warn",
     "no-complex-fallback": "off",
     "const-name-snakecase": "off",
-    "event-name-camelcase": "off",
+    "event-name-camelcase": "warn",
     "contract-name-camelcase": "off",
     "var-name-mixedcase": "off",
     "compiler-version": "off",

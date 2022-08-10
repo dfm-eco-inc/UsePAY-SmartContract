@@ -7,7 +7,7 @@ contract KLA_Commander is WrapAddresses {
     uint private reqeustTime = block.timestamp;
     bool private reEntry = false;
 
-    event giveEvent(address indexed pack, address fromAddr, address[] toAddr);
+    event GiveEvent(address indexed pack, address fromAddr, address[] toAddr);
 
     modifier blockReEntry() {
         require(!reEntry, "Not allowed");
