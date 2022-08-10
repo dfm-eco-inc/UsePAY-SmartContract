@@ -5,8 +5,16 @@ import "../../Pack/SubscriptionPack.sol";
 import "./KLA_Commander.sol";
 
 contract KLA_SubscriptionCommander is Subscription, KLA_Commander {
-    event buyEvent(address indexed pack, uint256 buyNum, address buyer); // 0: pack indexed, 1: buyer, 2: count
-    event requestRefundEvent(address indexed pack, address buyer, uint256 num, uint256 money); // 0: pack indexed, 1: buyer, 2: count
+    struct MultiSign {
+        uint count;
+        address[] confirmers;
+    }
+
+    uint private immutable numConfirmationsRequired;
+    MultiSign private multiSign;
+
+    event buyEvent(address indexed pack, uint256 buyNum, address buyer);
+    event requestRefundEvent(address indexed pack, address buyer, uint256 num, uint256 money);
     event calculateEvent(address indexed pack, address owner, uint256 value);
     event changeTotalEvent(address indexed, uint256 _before, uint256 _after);
 
@@ -33,6 +41,10 @@ contract KLA_SubscriptionCommander is Subscription, KLA_Commander {
     modifier canUse() {
         require(buyList[msg.sender].hasCount > 0, "U02 - Not enough owned count");
         _;
+    }
+
+    constructor() {
+        numConfirmationsRequired = viewNumOfConfirmation();
     }
 
     function buy(uint256 buyNum) external payable canBuy {
@@ -92,21 +104,57 @@ contract KLA_SubscriptionCommander is Subscription, KLA_Commander {
         emit requestRefundEvent(address(this), msg.sender, 1, refundValue);
     }
 
-    function calculate() external onCalculateTime {
+    function confirmCalculate() external haltInEmergency onlyManager(msg.sender) {
+        require(multiSign.count != 0, "Do not need confirmation");
+
+        for (uint i; i < multiSign.confirmers.length; i++) {
+            require(multiSign.confirmers[i] != msg.sender, "Already confirmed");
+        }
+
+        multiSign.confirmers[multiSign.count] = msg.sender;
+        multiSign.count++;
+
+        if (multiSign.count >= numConfirmationsRequired) {
+            this.calculate();
+        }
+    }
+
+    function calculate() external haltInEmergency onCalculateTime {
         uint256 balance;
 
-        if (block.timestamp > packInfo.times3 + 2592000) {
-            checkManager(msg.sender);
+        if (block.timestamp > packInfo.times3 + 30 days) {
+            if (msg.sender != address(this)) checkManager(msg.sender);
 
-            if (packInfo.tokenType == 100) {
-                balance = address(this).balance;
-                _refund(owner, balance);
+            require(
+                multiSign.count == 0 || multiSign.count >= numConfirmationsRequired,
+                "Wating for confirmation"
+            );
+
+            if (multiSign.count == 0) {
+                if (multiSign.confirmers.length != numConfirmationsRequired) {
+                    multiSign.confirmers = new address[](numConfirmationsRequired);
+                }
+
+                multiSign.confirmers[0] = msg.sender;
+                multiSign.count = 1;
             } else {
-                balance = getBalance(getAddress(packInfo.tokenType));
-                uint ownerValue = _percentValue(balance, 98);
+                if (packInfo.tokenType == 100) {
+                    balance = address(this).balance;
+                    _refund(owner, balance);
+                } else {
+                    balance = getBalance(getAddress(packInfo.tokenType));
+                    uint ownerValue = _percentValue(balance, 98);
 
-                _transfer(packInfo.tokenType, owner, ownerValue);
-                _transfer(packInfo.tokenType, msg.sender, balance - ownerValue);
+                    _transfer(packInfo.tokenType, owner, ownerValue);
+                    _transfer(packInfo.tokenType, msg.sender, balance - ownerValue);
+                }
+
+                multiSign.count = 0;
+                for (uint16 i; i < multiSign.confirmers.length; i++) {
+                    multiSign.confirmers[i] = address(0);
+                }
+
+                emit calculateEvent(address(this), owner, balance);
             }
         } else {
             require(msg.sender == owner, "you are not owner");
@@ -118,9 +166,9 @@ contract KLA_SubscriptionCommander is Subscription, KLA_Commander {
             }
 
             _transfer(packInfo.tokenType, owner, balance);
-        }
 
-        emit calculateEvent(address(this), owner, balance);
+            emit calculateEvent(address(this), owner, balance);
+        }
     }
 
     function changeTotal(uint32 count) external payable onlyOwner {
