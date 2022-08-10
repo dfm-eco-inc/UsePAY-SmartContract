@@ -115,7 +115,7 @@ contract Commander is WrapAddresses {
                 _tokenAddr,
                 500, // fee
                 _to,
-                block.timestamp + 15, // daedline
+                block.timestamp + 15 minutes, // daedline
                 _amountIn,
                 0, // amountOutMin
                 0 // sqrtPriceLimitX96

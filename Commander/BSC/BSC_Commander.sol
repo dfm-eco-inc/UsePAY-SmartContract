@@ -96,7 +96,7 @@ contract Commander is WrapAddresses {
                 0,
                 path,
                 _to,
-                block.timestamp + 1000 // daedline
+                block.timestamp + 15 minutes // daedline
             )
         );
 
