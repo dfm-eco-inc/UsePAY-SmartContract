@@ -4,27 +4,35 @@ pragma solidity 0.8.9;
 contract Addresses {
     struct MultiSign {
         uint count;
+        uint unlockTimestamp;
         uint16[] index;
         address[] addr;
         address[] confirmers;
     }
 
+    uint private immutable unlockSeconds;
     uint private immutable numConfirmationsRequired;
     mapping(uint16 => address) private addresses;
-    MultiSign private multiSignAddress;
-    MultiSign private multiSignAddresses;
+    MultiSign private multiSign;
 
-    event setAddressEvent(address newAddress, uint16 idx);
-    event setAddressesEvent(address[] newAddresses, uint16[] idxs);
+    event startSetAddressesEvent(address starterAddress, address[] newAddress, uint16[] idx);
+    event cancelSetAddressesEvent(address cancelerAddress);
+    event confirmSetAddressesEvent(address confirmerAddress);
+    event launchSetAddressesEvent(address launcherAddress, address[] newAddress, uint16[] idx);
 
     modifier onlyManager() {
         require(checkManager(msg.sender), "This address is not manager ");
         _;
     }
 
-    constructor(address[] memory _owners, uint _numConfirmationsRequired) {
-        require(_numConfirmationsRequired > 1, "At least 2 confirmations are required");
+    constructor(
+        address[] memory _owners,
+        uint _numConfirmationsRequired,
+        uint _unlockSeconds
+    ) {
         require(_owners.length >= 3, "A minimum of 3 accounts is required.");
+        require(_numConfirmationsRequired > 1, "At least 2 confirmations are required");
+        require(_unlockSeconds >= 10 seconds, "At least 10 seconds are required");
 
         for (uint16 i; i < _owners.length; i++) {
             address owner = _owners[i];
@@ -32,88 +40,84 @@ contract Addresses {
             addresses[i] = owner;
         }
 
+        unlockSeconds = _unlockSeconds;
         numConfirmationsRequired = _numConfirmationsRequired;
-        multiSignAddress.confirmers = new address[](numConfirmationsRequired);
-        multiSignAddresses.confirmers = new address[](numConfirmationsRequired);
+        multiSign.confirmers = new address[](numConfirmationsRequired);
     }
 
-    function confirmSetAddress() external onlyManager {
-        require(multiSignAddress.count != 0, "Do not need confirmation");
+    function startSetAddresses(uint16[] memory _index, address[] memory _addr)
+        external
+        onlyManager
+    {
+        require(multiSign.count == 0, "Already in progress");
 
-        for (uint i; i < multiSignAddress.confirmers.length; i++) {
-            require(multiSignAddress.confirmers[i] != msg.sender, "Already confirmed");
+        multiSign.confirmers[0] = msg.sender;
+        multiSign.index = _index;
+        multiSign.addr = _addr;
+        multiSign.count = 1;
+
+        emit startSetAddressesEvent(msg.sender, _addr, _index);
+    }
+
+    function cancelSetAddresses() external onlyManager {
+        require(multiSign.count > 0, "Can not cancel confirmation");
+
+        for (uint16 i; i < multiSign.confirmers.length; i++) {
+            if (multiSign.confirmers[i] == msg.sender) {
+                multiSign.confirmers[i] = address(0);
+                multiSign.count--;
+                break;
+            }
         }
 
-        multiSignAddress.confirmers[multiSignAddress.count] = msg.sender;
-        multiSignAddress.count++;
-
-        if (multiSignAddress.count >= numConfirmationsRequired) {
-            this.setAddress(multiSignAddress.index[0], multiSignAddress.addr[0]);
-        }
+        emit cancelSetAddressesEvent(msg.sender);
     }
 
     function confirmSetAddresses() external onlyManager {
-        require(multiSignAddresses.count != 0, "Do not need confirmation");
-
-        for (uint i; i < multiSignAddresses.confirmers.length; i++) {
-            require(multiSignAddresses.confirmers[i] != msg.sender, "Already confirmed");
-        }
-
-        multiSignAddresses.confirmers[multiSignAddresses.count] = msg.sender;
-        multiSignAddresses.count++;
-
-        if (multiSignAddresses.count >= numConfirmationsRequired) {
-            this.setAddresses(multiSignAddresses.index, multiSignAddresses.addr);
-        }
-    }
-
-    function setAddress(uint16 _index, address _addr) external onlyManager {
         require(
-            multiSignAddress.count == 0 || multiSignAddress.count >= numConfirmationsRequired,
-            "Wating for confirmation"
+            multiSign.count > 0 && multiSign.count < numConfirmationsRequired,
+            "Do not need confirmation"
         );
 
-        if (multiSignAddress.count == 0) {
-            multiSignAddress.confirmers[0] = msg.sender;
-            multiSignAddress.index = [_index];
-            multiSignAddress.addr = [_addr];
-            multiSignAddress.count = 1;
-        } else {
-            addresses[multiSignAddress.index[0]] = multiSignAddress.addr[0];
-
-            multiSignAddress.count = 0;
-            for (uint16 i; i < multiSignAddress.confirmers.length; i++) {
-                multiSignAddress.confirmers[i] = address(0);
-            }
-
-            emit setAddressEvent(_addr, _index);
+        for (uint i; i < multiSign.confirmers.length; i++) {
+            require(multiSign.confirmers[i] != msg.sender, "Already confirmed");
         }
+
+        for (uint i; i < multiSign.confirmers.length; i++) {
+            if (multiSign.confirmers[i] == address(0)) {
+                multiSign.confirmers[i] = msg.sender;
+                multiSign.count++;
+                break;
+            }
+        }
+
+        if (multiSign.count >= numConfirmationsRequired) {
+            multiSign.unlockTimestamp = uint32(block.timestamp + unlockSeconds);
+        }
+
+        emit confirmSetAddressesEvent(msg.sender);
     }
 
-    function setAddresses(uint16[] memory _index, address[] memory _addr) external onlyManager {
-        require(
-            multiSignAddresses.count == 0 || multiSignAddresses.count >= numConfirmationsRequired,
-            "Wating for confirmation"
-        );
-        require(_index.length == _addr.length, "not same _index,_addr length");
+    function launchSetAddresses() external onlyManager {
+        require(multiSign.count == numConfirmationsRequired, "Needed all confirmation");
+        require(block.timestamp >= multiSign.unlockTimestamp, "Execution time is not reached");
 
-        if (multiSignAddresses.count == 0) {
-            multiSignAddresses.confirmers[0] = msg.sender;
-            multiSignAddresses.index = _index;
-            multiSignAddresses.addr = _addr;
-            multiSignAddresses.count = 1;
-        } else {
-            for (uint i; i < multiSignAddresses.index.length; i++) {
-                addresses[multiSignAddresses.index[i]] = multiSignAddresses.addr[i];
-            }
-
-            multiSignAddresses.count = 0;
-            for (uint i; i < multiSignAddresses.confirmers.length; i++) {
-                multiSignAddresses.confirmers[i] = address(0);
-            }
-
-            emit setAddressesEvent(_addr, _index);
+        for (uint i; i < multiSign.index.length; i++) {
+            addresses[multiSign.index[i]] = multiSign.addr[i];
         }
+
+        multiSign.count = 0;
+        multiSign.unlockTimestamp = 0;
+
+        for (uint16 i; i < multiSign.confirmers.length; i++) {
+            multiSign.confirmers[i] = address(0);
+        }
+
+        emit launchSetAddressesEvent(msg.sender, multiSign.addr, multiSign.index);
+    }
+
+    function viewConfirmSetAddressStatus() external view returns (MultiSign memory) {
+        return multiSign;
     }
 
     function viewAddress(uint16 _index) external view returns (address) {
@@ -122,6 +126,10 @@ contract Addresses {
 
     function viewNumOfConfirmation() external view returns (uint) {
         return numConfirmationsRequired;
+    }
+
+    function viewUnlockSeconds() external view returns (uint) {
+        return unlockSeconds;
     }
 
     function checkManager(address _addr) public view returns (bool) {
