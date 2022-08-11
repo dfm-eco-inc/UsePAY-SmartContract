@@ -14,7 +14,7 @@ contract BSC_CouponCommander is Commander, Coupon {
 
     function changeTotal(uint32 count) external payable onlyOwner {
         require(packInfo.total - quantity <= count, "TC01 - Less than the remaining quantity");
-        require(count <= 1000, "C05 - Limit count over");
+        require(count <= 3000, "C05 - Limit count over");
 
         if (count > packInfo.total) {
             checkFee(count - packInfo.total);

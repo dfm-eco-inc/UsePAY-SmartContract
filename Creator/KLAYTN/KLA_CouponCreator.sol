@@ -9,6 +9,13 @@ contract KLA_CouponCreator is KLA_Commander, Coupon {
 
     function createCoupon(PackInfo calldata _packInfo, uint256 _createNum) external payable {
         require(_packInfo.total <= 3000, "C05 - Limit count over");
+        require(
+            _packInfo.times0 < _packInfo.times1 &&
+                _packInfo.times1 < _packInfo.times3 &&
+                _packInfo.times0 < _packInfo.times2 &&
+                _packInfo.times2 < _packInfo.times3,
+            "Invalid timing structure"
+        );
 
         checkFee(packInfo.total);
 
