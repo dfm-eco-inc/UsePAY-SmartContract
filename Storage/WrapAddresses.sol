@@ -14,6 +14,15 @@ contract WrapAddresses {
         _;
     }
 
+    function viewUnlockSeconds() internal view returns (uint) {
+        (bool success, bytes memory result) = address(iAddresses).staticcall(
+            abi.encodeWithSignature("viewUnlockSeconds()")
+        );
+
+        require(success, "Get number of confirmation failed");
+        return abi.decode(result, (uint));
+    }
+
     function viewNumOfConfirmation() internal view returns (uint) {
         (bool success, bytes memory result) = address(iAddresses).staticcall(
             abi.encodeWithSignature("viewNumOfConfirmation()")

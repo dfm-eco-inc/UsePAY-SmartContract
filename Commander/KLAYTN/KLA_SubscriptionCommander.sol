@@ -7,12 +7,23 @@ import "./KLA_Commander.sol";
 contract KLA_SubscriptionCommander is Subscription, KLA_Commander {
     struct MultiSign {
         uint count;
+        uint unlockTimestamp;
         address[] confirmers;
     }
 
+    uint private immutable unlockSeconds;
     uint private immutable numConfirmationsRequired;
     MultiSign private multiSign;
 
+    event LaunchCalculateEvent(
+        address starterAddress,
+        address indexed pack,
+        address owner,
+        uint256 value
+    );
+    event StartCalculateEvent(address starterAddress);
+    event CancelCalculateEvent(address cancelerAddress);
+    event ConfirmCalculateEvent(address confirmerAddress);
     event BuyEvent(address indexed pack, uint256 buyNum, address buyer);
     event RequestRefundEvent(address indexed pack, address buyer, uint256 num, uint256 money);
     event CalculateEvent(address indexed pack, address owner, uint256 value);
@@ -45,6 +56,7 @@ contract KLA_SubscriptionCommander is Subscription, KLA_Commander {
 
     constructor() {
         numConfirmationsRequired = viewNumOfConfirmation();
+        unlockSeconds = viewUnlockSeconds();
     }
 
     function buy(uint256 buyNum) external payable canBuy {
@@ -104,71 +116,104 @@ contract KLA_SubscriptionCommander is Subscription, KLA_Commander {
         emit RequestRefundEvent(address(this), msg.sender, 1, refundValue);
     }
 
+    function startCalculate() external haltInEmergency onlyManager(msg.sender) {
+        require(multiSign.count == 0, "Already in progress");
+
+        if (multiSign.confirmers.length == 0) {
+            multiSign.confirmers = new address[](numConfirmationsRequired);
+        }
+
+        multiSign.confirmers[0] = msg.sender;
+        multiSign.count = 1;
+
+        emit StartCalculateEvent(msg.sender);
+    }
+
+    function cancelCalculate() external haltInEmergency onlyManager(msg.sender) {
+        require(multiSign.count > 0, "Can not cancel confirmation");
+
+        bool success;
+
+        for (uint16 i; i < multiSign.confirmers.length; i++) {
+            if (multiSign.confirmers[i] == msg.sender) {
+                multiSign.confirmers[i] = address(0);
+                multiSign.count--;
+                success = true;
+                break;
+            }
+        }
+
+        require(success, "You've not confirmed");
+
+        emit CancelCalculateEvent(msg.sender);
+    }
+
     function confirmCalculate() external haltInEmergency onlyManager(msg.sender) {
-        require(multiSign.count != 0, "Do not need confirmation");
+        require(
+            multiSign.count > 0 && multiSign.count < numConfirmationsRequired,
+            "Do not need confirmation"
+        );
 
         for (uint i; i < multiSign.confirmers.length; i++) {
             require(multiSign.confirmers[i] != msg.sender, "Already confirmed");
         }
 
-        multiSign.confirmers[multiSign.count] = msg.sender;
-        multiSign.count++;
+        for (uint i; i < multiSign.confirmers.length; i++) {
+            if (multiSign.confirmers[i] == address(0)) {
+                multiSign.confirmers[i] = msg.sender;
+                multiSign.count++;
+                break;
+            }
+        }
 
         if (multiSign.count >= numConfirmationsRequired) {
-            this.calculate();
+            multiSign.unlockTimestamp = uint32(block.timestamp + unlockSeconds);
         }
+
+        emit ConfirmCalculateEvent(msg.sender);
+    }
+
+    function launchCalculate() external haltInEmergency onlyManager(msg.sender) {
+        require(multiSign.count == numConfirmationsRequired, "Needed all confirmation");
+        require(block.timestamp >= multiSign.unlockTimestamp, "Execution time is not reached");
+
+        uint256 balance;
+
+        if (packInfo.tokenType == 100) {
+            balance = address(this).balance;
+            _refund(owner, balance);
+        } else {
+            balance = getBalance(getAddress(packInfo.tokenType));
+            uint ownerValue = _percentValue(balance, 98);
+
+            _transfer(packInfo.tokenType, owner, ownerValue);
+            _transfer(packInfo.tokenType, msg.sender, balance - ownerValue);
+        }
+
+        multiSign.count = 0;
+        multiSign.unlockTimestamp = 0;
+
+        for (uint16 i; i < multiSign.confirmers.length; i++) {
+            multiSign.confirmers[i] = address(0);
+        }
+
+        emit LaunchCalculateEvent(msg.sender, address(this), owner, balance);
     }
 
     function calculate() external haltInEmergency onCalculateTime {
+        require(msg.sender == owner, "you are not owner");
+
         uint256 balance;
 
-        if (block.timestamp > packInfo.times3 + 30 days) {
-            if (msg.sender != address(this)) checkManager(msg.sender);
-
-            require(
-                multiSign.count == 0 || multiSign.count >= numConfirmationsRequired,
-                "Wating for confirmation"
-            );
-
-            if (multiSign.count == 0) {
-                if (multiSign.confirmers.length != numConfirmationsRequired) {
-                    multiSign.confirmers = new address[](numConfirmationsRequired);
-                }
-
-                multiSign.confirmers[0] = msg.sender;
-                multiSign.count = 1;
-            } else {
-                if (packInfo.tokenType == 100) {
-                    balance = address(this).balance;
-                    _refund(owner, balance);
-                } else {
-                    balance = getBalance(getAddress(packInfo.tokenType));
-                    uint ownerValue = _percentValue(balance, 98);
-
-                    _transfer(packInfo.tokenType, owner, ownerValue);
-                    _transfer(packInfo.tokenType, msg.sender, balance - ownerValue);
-                }
-
-                multiSign.count = 0;
-                for (uint16 i; i < multiSign.confirmers.length; i++) {
-                    multiSign.confirmers[i] = address(0);
-                }
-
-                emit CalculateEvent(address(this), owner, balance);
-            }
+        if (packInfo.tokenType == 100) {
+            balance = address(this).balance;
         } else {
-            require(msg.sender == owner, "you are not owner");
-
-            if (packInfo.tokenType == 100) {
-                balance = address(this).balance;
-            } else {
-                balance = getBalance(getAddress(packInfo.tokenType));
-            }
-
-            _transfer(packInfo.tokenType, owner, balance);
-
-            emit CalculateEvent(address(this), owner, balance);
+            balance = getBalance(getAddress(packInfo.tokenType));
         }
+
+        _transfer(packInfo.tokenType, owner, balance);
+
+        emit CalculateEvent(address(this), owner, balance);
     }
 
     function changeTotal(uint32 count) external payable onlyOwner {
