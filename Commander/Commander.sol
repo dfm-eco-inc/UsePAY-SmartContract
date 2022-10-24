@@ -1,168 +1,120 @@
 // SPDX-License-Identifier: GNU LGPLv3
 pragma solidity 0.8.9;
 
-import "../Storage/WrapAddresses.sol";
-import "../Library/AggregatorV3Interface.sol";
+import '../Storage/WrapAddresses.sol';
+import '../Library/AggregatorV3Interface.sol';
+import '../Library/IUniswapV2Router01.sol';
+import './EmergencyStop.sol';
+import '../Library/IERC20.sol';
 
 contract Commander is WrapAddresses {
-    struct ExactInputSingleParams {
-        address tokenIn;
-        address tokenOut;
-        uint24 fee;
-        address recipient;
-        uint256 deadline;
-        uint256 amountIn;
-        uint256 amountOutMinimum;
-        uint160 sqrtPriceLimitX96;
-    }
-
-    uint private reqeustTime = block.timestamp;
-    bool private reEntry = false;
-
-    event GiveEvent(address indexed pack, address fromAddr, address[] toAddr);
+    event GiveEvent(address indexed packAddress, address senderAddress, address[] receiverAddress);
 
     modifier blockReEntry() {
-        require(!reEntry, "Not allowed");
-        reEntry = true;
+        require(!isReEntry, 'Not allowed');
+        isReEntry = true;
         _;
-        reEntry = false;
+        isReEntry = false;
     }
 
     modifier haltInEmergency() {
-        require(!_isHalted(), "function not allowed");
+        require(!isHalted(), 'function not allowed');
         _;
     }
 
-    modifier requestLimit(uint t) {
-        require(block.timestamp >= reqeustTime, "Too many request");
-        reqeustTime = block.timestamp + t;
+    modifier requestLimit(uint limitTimestamp) {
+        require(block.timestamp >= requestTime, 'Too many request');
+        requestTime = block.timestamp + limitTimestamp;
         _;
     }
 
-    function getCountFee(uint count) external view returns (uint256) {
-        uint8 n;
-
-        if (count > 10) {
-            while (count >= 10) {
-                count = count / 10;
-                n++;
-            }
-
-            return getPrice() * n * 5;
+    function getCountFee(uint count) public view returns (uint256) {
+        uint256 price = getPrice();
+        if (count <= 10) {
+            return price;
+        } else if (count <= 100) {
+            return price * 5;
         } else {
-            return getPrice();
+            return price * 10;
         }
     }
 
-    // Returning value of WEI of the native token (Data Feeds Addresses : https://docs.chain.link/docs/reference-contracts)
     function getPrice() public view returns (uint256) {
-        AggregatorV3Interface priceFeed = AggregatorV3Interface(getAddress(7001));
-        (, int price, , , ) = priceFeed.latestRoundData();
+        address targetAddress = getAddress(ADR_CHAINLINK_DATAFEED);
+        if (targetAddress == address(0)) return 1000000000000000000; // For local testing, 1 ETH
+
+        AggregatorV3Interface priceFeed = AggregatorV3Interface(targetAddress);
+        (, int price, , , ) = priceFeed.latestRoundData(); // Get USD price per 1 Native token
         uint256 totalDecimal = 10**(18 + priceFeed.decimals());
 
-        return totalDecimal / uint256(price);
+        return totalDecimal / uint256(price); // Return the wei price of native token per 1 USD
     }
 
-    function _transfer(
-        uint16 tokenType,
-        address _to,
-        uint256 value
-    ) internal {
-        if (tokenType == 100) {
-            payable(_to).transfer(value);
-        } else {
-            (bool success, ) = getAddress(tokenType).call(
-                abi.encodeWithSignature("transfer(address,uint256)", _to, value)
-            );
-
-            require(success, "TOKEN transfer Fail");
-        }
-    }
-
-    function _getBalance(uint16 tokenType) internal view returns (uint256) {
-        uint balance;
-
-        if (tokenType == 100) {
-            balance = address(this).balance;
-        } else {
-            balance = getBalance(getAddress(tokenType));
-        }
-
-        return balance;
-    }
-
-    function _swap(address _to, uint256 amountIn) internal returns (uint256) {
-        (bool success, bytes memory result) = getAddress(1200).call{value: amountIn}(
-            abi.encodeWithSignature(
-                "exactInputSingle((address,address,uint24,address,uint256,uint256,uint256,uint160))",
-                getExactInputSigleParams(_to, amountIn, getAddress(101))
-            )
+    function getAddress(uint16 index) internal view returns (address) {
+        (bool success, bytes memory addressBytes) = address(ADR_ADDRESSES).staticcall(
+            abi.encodeWithSignature('viewAddress(uint16)', uint16(index))
         );
-
-        require(success, "swap ETH->TOKEN fail");
-
-        return abi.decode(result, (uint256));
+        return success ? abi.decode(addressBytes, (address)) : address(0);
     }
 
-    function getExactInputSigleParams(
-        address _to,
-        uint256 _amountIn,
-        address _tokenAddr
-    ) internal view returns (ExactInputSingleParams memory) {
-        return
-            ExactInputSingleParams(
-                getAddress(103), // WETH
-                _tokenAddr,
-                500, // fee
-                _to,
-                block.timestamp + 15 minutes, // daedline
-                _amountIn,
-                0, // amountOutMin
-                0 // sqrtPriceLimitX96
-            );
+    function isHalted() internal view returns (bool) {
+        address target = getAddress(ADR_EMERGENCY_STOP);
+        require(target != address(0), 'EmergencyStop is not available');
+
+        EmergencyStop halt = EmergencyStop(target);
+
+        return halt.getContractStopped();
     }
 
     function checkFee(uint count) internal {
-        uint8 n;
-
-        if (count > 10) {
-            while (count >= 10) {
-                count = count / 10;
-                n++;
-            }
-
-            require(msg.value > getPrice() * n * 5, "C01 - Not enough fee");
-        } else {
-            require(msg.value > getPrice(), "C01 - Not enough fee");
-        }
+        require(msg.value >= getCountFee(count), 'C01 - Not enough fee');
     }
 
-    function _isHalted() internal view returns (bool) {
-        (bool success, bytes memory resultBytes) = getAddress(7000).staticcall(
-            abi.encodeWithSignature("getContractStopped()")
-        );
-
-        require(success, "Get Contract Stopped failed");
-        return abi.decode(resultBytes, (bool));
-    }
-
-    function getBalance(address addr) internal view returns (uint256) {
+    function _getBalance(address addr) internal view returns (uint256) {
         (bool success, bytes memory balanceBytes) = addr.staticcall(
-            abi.encodeWithSignature("balanceOf(address)", address(this))
+            abi.encodeWithSignature('balanceOf(address)', address(this))
         );
-
-        require(success, "Get balance failed");
+        require(success, 'Failed to call balanceOf() method');
 
         return abi.decode(balanceBytes, (uint256));
     }
 
-    function getAddress(uint16 index) internal view returns (address) {
-        (bool success, bytes memory addressBytes) = address(iAddresses).staticcall(
-            abi.encodeWithSignature("viewAddress(uint16)", uint16(index))
+    function _transfer(
+        uint16 tokenType,
+        address to,
+        uint256 amount
+    ) internal {
+        if (tokenType == ADR_NATIVE_TOKEN) {
+            payable(to).transfer(amount);
+        } else {
+            IERC20 token = IERC20(getAddress(tokenType));
+            token.transfer(to, amount);
+        }
+    }
+
+    function _swap(
+        uint16 index,
+        address to,
+        uint256 amount
+    ) internal returns (uint) {
+        address routerAddr = getAddress(ADR_UNISWAP_ROUTER);
+        address[] memory path = new address[](2);
+        path[1] = getAddress(index);
+
+        require(path[1] != address(0) && routerAddr != address(0), 'The token swap is not available');
+
+        IUniswapV2Router01 router = IUniswapV2Router01(routerAddr);
+        path[0] = router.WETH();
+
+        uint[] memory amounts = router.swapExactETHForTokens{ value: amount }(
+            0,
+            path,
+            to,
+            block.timestamp + 15 minutes
         );
 
-        require(success, "Get address failed");
+        require(amounts[1] > 0, 'Failed to swap native tokens for ERC-20 tokens');
 
-        return abi.decode(addressBytes, (address));
+        return amounts[1];
     }
 }

@@ -3,15 +3,15 @@ pragma solidity 0.8.9;
 
 contract Addresses {
     struct MultiSign {
-        uint count;
-        uint unlockTimestamp;
+        uint256 count;
+        uint256 unlockTimestamp;
         uint16[] index;
         address[] addr;
         address[] confirmers;
     }
 
-    uint private immutable unlockSeconds;
-    uint private immutable numConfirmationsRequired;
+    uint256 private immutable unlockSeconds;
+    uint256 private immutable numConfirmationsRequired;
     mapping(uint16 => address) private addresses;
     MultiSign private multiSign;
 
@@ -21,46 +21,43 @@ contract Addresses {
     event LaunchSetAddressesEvent(address launcherAddress, address[] newAddress, uint16[] idx);
 
     modifier onlyManager() {
-        require(checkManager(msg.sender), "This address is not manager ");
+        require(checkManager(msg.sender), 'This address is not manager ');
         _;
     }
 
     constructor(
-        address[] memory _owners,
-        uint _numConfirmationsRequired,
-        uint _unlockSeconds
+        address[] memory managerAddresses,
+        uint256 confirmationCount,
+        uint256 unlockDelaySeconds
     ) {
-        require(_owners.length >= 3, "A minimum of 3 accounts is required.");
-        require(_numConfirmationsRequired > 1, "At least 2 confirmations are required");
-        require(_unlockSeconds >= 10 seconds, "At least 10 seconds are required");
+        require(managerAddresses.length >= 1, 'A minimum of 1 accounts is required.');
+        require(confirmationCount >= 1, 'At least 1 confirmations are required');
+        require(unlockDelaySeconds >= 1 seconds, 'At least 1 seconds are required');
 
-        for (uint16 i; i < _owners.length; i++) {
-            address owner = _owners[i];
-            require(owner != address(0), "Invalid account");
-            addresses[i] = owner;
+        for (uint16 i; i < managerAddresses.length; i++) {
+            address manager = managerAddresses[i];
+            require(manager != address(0), 'Invalid account');
+            addresses[i] = manager;
         }
 
-        unlockSeconds = _unlockSeconds;
-        numConfirmationsRequired = _numConfirmationsRequired;
+        unlockSeconds = unlockDelaySeconds;
+        numConfirmationsRequired = confirmationCount;
         multiSign.confirmers = new address[](numConfirmationsRequired);
     }
 
-    function startSetAddresses(uint16[] memory _index, address[] memory _addr)
-        external
-        onlyManager
-    {
-        require(multiSign.count == 0, "Already in progress");
+    function startSetAddresses(uint16[] memory index, address[] memory newAddress) external onlyManager {
+        require(multiSign.count == 0, 'Already in progress');
 
         multiSign.confirmers[0] = msg.sender;
-        multiSign.index = _index;
-        multiSign.addr = _addr;
+        multiSign.index = index;
+        multiSign.addr = newAddress;
         multiSign.count = 1;
 
-        emit StartSetAddressesEvent(msg.sender, _addr, _index);
+        emit StartSetAddressesEvent(msg.sender, newAddress, index);
     }
 
     function cancelSetAddresses() external onlyManager {
-        require(multiSign.count > 0, "Can not cancel confirmation");
+        require(multiSign.count > 0, 'Can not cancel confirmation');
 
         for (uint16 i; i < multiSign.confirmers.length; i++) {
             if (multiSign.confirmers[i] == msg.sender) {
@@ -74,16 +71,13 @@ contract Addresses {
     }
 
     function confirmSetAddresses() external onlyManager {
-        require(
-            multiSign.count > 0 && multiSign.count < numConfirmationsRequired,
-            "Do not need confirmation"
-        );
+        require(multiSign.count > 0 && multiSign.count < numConfirmationsRequired, 'Do not need confirmation');
 
-        for (uint i; i < multiSign.confirmers.length; i++) {
-            require(multiSign.confirmers[i] != msg.sender, "Already confirmed");
+        for (uint256 i; i < multiSign.confirmers.length; i++) {
+            require(multiSign.confirmers[i] != msg.sender, 'Already confirmed');
         }
 
-        for (uint i; i < multiSign.confirmers.length; i++) {
+        for (uint256 i; i < multiSign.confirmers.length; i++) {
             if (multiSign.confirmers[i] == address(0)) {
                 multiSign.confirmers[i] = msg.sender;
                 multiSign.count++;
@@ -99,10 +93,10 @@ contract Addresses {
     }
 
     function launchSetAddresses() external onlyManager {
-        require(multiSign.count == numConfirmationsRequired, "Needed all confirmation");
-        require(block.timestamp >= multiSign.unlockTimestamp, "Execution time is not reached");
+        require(multiSign.count == numConfirmationsRequired, 'Needed all confirmation');
+        require(block.timestamp >= multiSign.unlockTimestamp, 'Execution time is not reached');
 
-        for (uint i; i < multiSign.index.length; i++) {
+        for (uint256 i; i < multiSign.index.length; i++) {
             addresses[multiSign.index[i]] = multiSign.addr[i];
         }
 
@@ -120,24 +114,24 @@ contract Addresses {
         return multiSign;
     }
 
-    function viewAddress(uint16 _index) external view returns (address) {
-        return addresses[_index];
+    function viewAddress(uint16 index) external view returns (address) {
+        return addresses[index];
     }
 
-    function viewNumOfConfirmation() external view returns (uint) {
+    function viewNumOfConfirmation() external view returns (uint256) {
         return numConfirmationsRequired;
     }
 
-    function viewUnlockSeconds() external view returns (uint) {
+    function viewUnlockSeconds() external view returns (uint256) {
         return unlockSeconds;
     }
 
-    function checkManager(address _addr) public view returns (bool) {
-        require(_addr != address(0), "AD01 - Not available for manager");
-        if (_addr == address(this)) return true;
+    function checkManager(address targetAddress) public view returns (bool) {
+        require(targetAddress != address(0), 'AD01 - Not available for manager');
+        if (targetAddress == address(this)) return true;
 
         for (uint16 i; i < 100; i++) {
-            if (addresses[i] == _addr) {
+            if (addresses[i] == targetAddress) {
                 return true;
             }
         }

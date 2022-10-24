@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GNU LGPLv3
 pragma solidity 0.8.9;
 
-import "../Storage/WrapAddresses.sol";
+import '../Storage/WrapAddresses.sol';
 
 contract Ticket is WrapAddresses {
     struct pack {
@@ -22,7 +22,7 @@ contract Ticket is WrapAddresses {
     }
 
     bool internal isCalculated = false;
-    uint8 internal immutable ver = 1;
+    uint8 internal immutable ver = 2;
     uint32 internal totalUsedCount;
     uint32 internal quantity;
     address internal owner;
@@ -32,11 +32,6 @@ contract Ticket is WrapAddresses {
 }
 
 contract Coupon is WrapAddresses {
-    struct pack {
-        uint32 hasCount;
-        uint32 useCount;
-    }
-
     struct PackInfo {
         uint32 total;
         uint32 maxCount;
@@ -46,12 +41,11 @@ contract Coupon is WrapAddresses {
         uint32 times3;
     }
 
-    uint8 internal immutable ver = 1;
+    uint8 internal immutable ver = 2;
     uint32 internal quantity;
     address internal owner;
 
     PackInfo internal packInfo;
-    mapping(address => pack) internal buyList;
 }
 
 contract Subscription is WrapAddresses {
@@ -69,7 +63,7 @@ contract Subscription is WrapAddresses {
         uint256 price;
     }
 
-    uint8 internal immutable ver = 1;
+    uint8 internal immutable ver = 2;
     uint32 internal quantity;
     address internal owner;
 

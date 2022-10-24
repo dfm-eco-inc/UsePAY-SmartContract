@@ -1,23 +1,24 @@
 // SPDX-License-Identifier: GNU LGPLv3
 pragma solidity 0.8.9;
 
-import "./Pack.sol";
+import '../Storage/Pack.sol';
+import '../Storage/WrapAddresses.sol';
 
 contract SubscriptionPack is Subscription {
-    constructor(PackInfo memory _packInfo, address _owner) {
-        require(_owner != address(0), "AD01 - Not available for manager");
+    constructor(PackInfo memory newPackInfo, address ownerAddress) {
+        require(ownerAddress != address(0), 'AD01 - Not available for manager');
 
-        packInfo = _packInfo;
-        quantity = _packInfo.total;
-        owner = _owner;
+        packInfo = newPackInfo;
+        quantity = newPackInfo.total;
+        owner = ownerAddress;
     }
 
     fallback() external payable {
-        (bool success, bytes memory packBytes) = address(iAddresses).staticcall(
-            abi.encodeWithSignature("viewAddress(uint16)", 10002)
+        (bool success, bytes memory packBytes) = address(ADR_ADDRESSES).staticcall(
+            abi.encodeWithSignature('viewAddress(uint16)', ADR_SUBSCR_COMMANDER)
         );
 
-        require(success, "SubscriptionPack address Fail");
+        require(success, 'SubscriptionPack address Fail');
 
         address subscription_commander = abi.decode(packBytes, (address));
 
@@ -30,10 +31,10 @@ contract SubscriptionPack is Subscription {
 
             switch result
             case 0 {
-                revert(ptr, returndatasize()) //fail
+                revert(ptr, returndatasize())
             }
             default {
-                return(ptr, returndatasize()) //success
+                return(ptr, returndatasize())
             }
         }
     }

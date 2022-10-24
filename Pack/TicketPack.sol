@@ -1,23 +1,24 @@
 // SPDX-License-Identifier: GNU LGPLv3
 pragma solidity 0.8.9;
 
-import "./Pack.sol";
+import '../Storage/Pack.sol';
+import '../Storage/WrapAddresses.sol';
 
 contract TicketPack is Ticket {
-    constructor(PackInfo memory _packInfo, address _owner) {
-        require(_owner != address(0), "AD01 - Not available for manager");
+    constructor(PackInfo memory newPackInfo, address ownerAddress) {
+        require(ownerAddress != address(0), 'AD01 - Not available for manager');
 
-        packInfo = _packInfo;
-        owner = _owner;
-        quantity = _packInfo.total;
+        packInfo = newPackInfo;
+        quantity = newPackInfo.total;
+        owner = ownerAddress;
     }
 
     fallback() external payable {
-        (bool success, bytes memory packBytes) = address(iAddresses).staticcall(
-            abi.encodeWithSignature("viewAddress(uint16)", 10000)
+        (bool success, bytes memory packBytes) = address(ADR_ADDRESSES).staticcall(
+            abi.encodeWithSignature('viewAddress(uint16)', ADR_TICKET_COMMANDER)
         );
 
-        require(success, "TicketPack address Fail");
+        require(success, 'TicketPack address Fail');
 
         address tikcet_commander = abi.decode(packBytes, (address));
 
@@ -30,10 +31,10 @@ contract TicketPack is Ticket {
 
             switch result
             case 0 {
-                revert(ptr, returndatasize()) //fail
+                revert(ptr, returndatasize())
             }
             default {
-                return(ptr, returndatasize()) //success
+                return(ptr, returndatasize())
             }
         }
     }
