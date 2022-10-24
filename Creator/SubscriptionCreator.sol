@@ -1,31 +1,37 @@
 // SPDX-License-Identifier: GNU LGPLv3
 pragma solidity 0.8.9;
 
-import "../Pack/SubscriptionPack.sol";
-import "../Commander/Commander.sol";
+import '../Pack/SubscriptionPack.sol';
+import '../Commander/Commander.sol';
 
-contract SubscriptionCreator is Subscription, Commander {
-    event CreateSubscriptionEvent(address indexed pack, uint256 createNum, PackInfo packInfo);
+contract SubscriptionCreator is Commander, Subscription {
+    event CreateSubscriptionEvent(
+        address indexed packAddress,
+        uint256 txUniqueNumber,
+        PackInfo packInfo,
+        uint256 feePrice,
+        uint swappedAmount
+    );
 
-    function createSubscription(PackInfo calldata _packInfo, uint256 createNum) external payable {
-        require(_packInfo.total <= 1000, "C05 - Limit count over");
+    function createSubscription(PackInfo calldata packInfo, uint256 txUniqueNumber) external payable {
+        require(msg.sender != address(0), 'Invalid account');
+        require(packInfo.total <= MAX_SUBSCRIPTION_QTY && packInfo.total > 0, 'C05 - Wrong total count');
         require(
-            _packInfo.times0 < _packInfo.times1 &&
-                _packInfo.times1 < _packInfo.times3 &&
-                _packInfo.times0 < _packInfo.times2 &&
-                _packInfo.times2 < _packInfo.times3,
-            "Invalid timing structure"
+            packInfo.times0 < packInfo.times1 &&
+                packInfo.times1 < packInfo.times3 &&
+                packInfo.times0 < packInfo.times2 &&
+                packInfo.times2 < packInfo.times3,
+            'Invalid timing structure'
         );
 
         checkFee(packInfo.total);
+        uint swapAmount = _swap(ADR_PAC_TOKEN, msg.sender, msg.value);
+        SubscriptionPack pack = new SubscriptionPack(packInfo, msg.sender);
 
-        _swap(msg.sender, msg.value);
-        SubscriptionPack pers = new SubscriptionPack(_packInfo, msg.sender);
-
-        emit CreateSubscriptionEvent(address(pers), createNum, _packInfo);
+        emit CreateSubscriptionEvent(address(pack), txUniqueNumber, packInfo, msg.value, swapAmount);
     }
 
-    function viewVersion() external view returns (uint8) {
+    function viewVersion() external pure returns (uint8) {
         return ver;
     }
 }

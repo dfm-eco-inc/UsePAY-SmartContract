@@ -1,62 +1,71 @@
 // SPDX-License-Identifier: GNU LGPLv3
 pragma solidity 0.8.9;
 
-import "../Pack/SubscriptionPack.sol";
-import "./Commander.sol";
+import '../Pack/SubscriptionPack.sol';
+import './Commander.sol';
+import '../Library/Percentage.sol';
 
-contract SubscriptionCommander is Subscription, Commander {
+contract SubscriptionCommander is Commander, Subscription {
     struct MultiSign {
-        uint count;
-        uint unlockTimestamp;
+        uint256 count;
+        uint256 unlockTimestamp;
         address[] confirmers;
     }
 
-    uint private immutable unlockSeconds;
-    uint private immutable numConfirmationsRequired;
+    uint256 private immutable unlockSeconds;
+    uint256 private immutable numConfirmationsRequired;
     MultiSign private multiSign;
 
     event LaunchCalculateEvent(
         address starterAddress,
-        address indexed pack,
+        address indexed packAddress,
         address owner,
-        uint256 value
+        uint256 balance,
+        uint256 calculatedAmount,
+        uint256 swappedAmount,
+        uint256 feeAmount
     );
     event StartCalculateEvent(address starterAddress);
     event CancelCalculateEvent(address cancelerAddress);
     event ConfirmCalculateEvent(address confirmerAddress);
-    event CalculateEvent(address indexed pack, address owner, uint256 value);
-    event ChangeTotalEvent(address indexed, uint256 _before, uint256 _after);
-    event BuyEvent(address indexed pack, uint256 buyNum, address buyer);
+    event CalculateEvent(address indexed packAddress, address owner, uint256 calculatedAmount);
+    event BuyEvent(address indexed packAddress, address buyer);
     event RequestRefundEvent(
-        address indexed pack,
+        address indexed packAddress,
         address buyer,
-        uint256 num,
-        uint256 money,
-        uint256 swap
+        uint256 refundedAmount,
+        uint256 swappedTokenAmount
+    );
+    event ChangeTotalEvent(
+        address indexed,
+        uint256 previousTotal,
+        uint256 changedTotal,
+        uint256 feePrice,
+        uint swappedAmount
     );
 
     modifier onlyOwner() {
-        require(msg.sender == owner, "O01 - Only for issuer");
+        require(msg.sender == owner, 'O01 - Only for issuer');
         _;
     }
 
     modifier onCalculateTime() {
-        require(block.timestamp > packInfo.times3, "CT01 - Not available time for calculate");
+        require(block.timestamp > packInfo.times3, 'CT01 - Not available time for calculate');
         _;
     }
 
     modifier canBuy() {
-        require(buyList[msg.sender].hasCount == 0, "B00 - Already bought pack");
+        require(buyList[msg.sender].hasCount == 0, 'B00 - Already bought pack');
         require(
             block.timestamp >= packInfo.times0 && block.timestamp <= packInfo.times1,
-            "B01 - Not available time for buy"
+            'B01 - Not available time for buy'
         );
-        require(quantity > 0, "B04 - Not enough quentity");
+        require(quantity > 0, 'B04 - Not enough quentity');
         _;
     }
 
     modifier canUse() {
-        require(buyList[msg.sender].hasCount > 0, "U02 - Not enough owned count");
+        require(buyList[msg.sender].hasCount > 0, 'U02 - Not enough owned count');
         _;
     }
 
@@ -65,68 +74,56 @@ contract SubscriptionCommander is Subscription, Commander {
         unlockSeconds = viewUnlockSeconds();
     }
 
-    function buy(uint256 buyNum) external payable canBuy {
-        if (packInfo.tokenType == 100) {
-            require(msg.value == packInfo.price, "B03 - Not enough value");
+    function buy() external payable canBuy {
+        if (packInfo.tokenType == ADR_NATIVE_TOKEN) {
+            require(msg.value == packInfo.price, 'B03 - Not enough value');
         } else {
-            (bool success, ) = getAddress(packInfo.tokenType).call(
-                abi.encodeWithSignature(
-                    "transferFrom(address,address,uint256)",
-                    msg.sender,
-                    address(this),
-                    packInfo.price
-                )
-            );
+            address tokenAddress = getAddress(packInfo.tokenType);
+            require(tokenAddress != address(0), 'Token address is empty');
 
-            require(success, "T01 - Token transfer failed");
+            IERC20 token = IERC20(tokenAddress);
+            require(token.allowance(msg.sender, address(this)) >= packInfo.price, 'B03 - Not enough value');
+
+            token.transferFrom(msg.sender, address(this), packInfo.price);
         }
 
-        _buy(msg.sender);
+        buyList[msg.sender].hasCount = 1;
+        quantity--;
 
-        emit BuyEvent(address(this), buyNum, msg.sender);
+        emit BuyEvent(address(this), msg.sender);
     }
 
-    function give(address[] memory toAddr) external canUse {
-        buyList[msg.sender].hasCount = buyList[msg.sender].hasCount - uint32(toAddr.length);
+    function give(address[] memory to) external canUse {
+        require(to.length == 1, 'Subscription packs can only be sent to one person');
 
-        for (uint i; i < toAddr.length; i++) {
-            buyList[toAddr[i]].hasCount++;
-        }
+        buyList[msg.sender].hasCount = 0;
+        buyList[to[0]].hasCount = 1;
 
-        emit GiveEvent(address(this), msg.sender, toAddr);
+        emit GiveEvent(address(this), msg.sender, to);
     }
 
     function requestRefund() external canUse blockReEntry haltInEmergency requestLimit(1 minutes) {
-        require(block.timestamp < packInfo.times3, "N04 - Not available time for refund");
+        require(block.timestamp < packInfo.times3, 'N04 - Not available time for refund');
 
-        uint refundValue;
+        uint256 refundAmount;
 
-        if (block.timestamp < packInfo.times2) {
+        if (block.timestamp < packInfo.times2 + 2 days) {
             quantity++;
-            refundValue = packInfo.price;
+            refundAmount = packInfo.price;
         } else {
-            (bool success, bytes memory resultPercent) = getAddress(1300).staticcall(
-                abi.encodeWithSignature(
-                    "getTimePercent(uint256,uint256)",
-                    packInfo.times3 - packInfo.times2,
-                    packInfo.times3 - block.timestamp
-                )
-            );
-
-            require(success, "Get time percent failed");
-
-            uint8 percent = abi.decode(resultPercent, (uint8));
-            refundValue = _percentValue(packInfo.price, percent);
+            uint256 percent = getTimePercent(packInfo.times3 - packInfo.times2, packInfo.times3 - block.timestamp);
+            refundAmount = percentValue(packInfo.price, percent);
         }
 
-        buyList[msg.sender].hasCount--;
-        (uint value, uint swap) = _refund(msg.sender, refundValue, 0);
+        buyList[msg.sender].hasCount = 0;
+        (uint256 refunded, uint256 swapped) = refund(msg.sender, refundAmount, 0);
 
-        emit RequestRefundEvent(address(this), msg.sender, 1, value, swap);
+        emit RequestRefundEvent(address(this), msg.sender, refunded, swapped);
     }
 
     function startCalculate() external haltInEmergency onlyManager(msg.sender) {
-        require(multiSign.count == 0, "Already in progress");
+        require(packInfo.times3 + 30 days < block.timestamp, 'Only available after 30 days from times3');
+        require(multiSign.count == 0, 'Already in progress');
 
         if (multiSign.confirmers.length == 0) {
             multiSign.confirmers = new address[](numConfirmationsRequired);
@@ -139,7 +136,7 @@ contract SubscriptionCommander is Subscription, Commander {
     }
 
     function cancelCalculate() external haltInEmergency onlyManager(msg.sender) {
-        require(multiSign.count > 0, "Can not cancel confirmation");
+        require(multiSign.count > 0, 'Can not cancel confirmation');
 
         bool success;
 
@@ -158,16 +155,13 @@ contract SubscriptionCommander is Subscription, Commander {
     }
 
     function confirmCalculate() external haltInEmergency onlyManager(msg.sender) {
-        require(
-            multiSign.count > 0 && multiSign.count < numConfirmationsRequired,
-            "Do not need confirmation"
-        );
+        require(multiSign.count > 0 && multiSign.count < numConfirmationsRequired, 'Do not need confirmation');
 
-        for (uint i; i < multiSign.confirmers.length; i++) {
-            require(multiSign.confirmers[i] != msg.sender, "Already confirmed");
+        for (uint256 i; i < multiSign.confirmers.length; i++) {
+            require(multiSign.confirmers[i] != msg.sender, 'Already confirmed');
         }
 
-        for (uint i; i < multiSign.confirmers.length; i++) {
+        for (uint256 i; i < multiSign.confirmers.length; i++) {
             if (multiSign.confirmers[i] == address(0)) {
                 multiSign.confirmers[i] = msg.sender;
                 multiSign.count++;
@@ -183,20 +177,24 @@ contract SubscriptionCommander is Subscription, Commander {
     }
 
     function launchCalculate() external haltInEmergency onlyManager(msg.sender) {
-        require(multiSign.count == numConfirmationsRequired, "Needed all confirmation");
-        require(block.timestamp >= multiSign.unlockTimestamp, "Execution time is not reached");
+        require(multiSign.count == numConfirmationsRequired, 'Needed all confirmation');
+        require(block.timestamp >= multiSign.unlockTimestamp, 'Execution time is not reached');
 
         uint256 balance;
+        uint256 calculatedAmount;
+        uint256 swappedAmount;
+        uint256 feeAmount;
 
-        if (packInfo.tokenType == 100) {
+        if (packInfo.tokenType == ADR_NATIVE_TOKEN) {
             balance = address(this).balance;
-            _refund(owner, balance, 10);
+            (calculatedAmount, swappedAmount) = refund(owner, balance, 10);
         } else {
-            balance = getBalance(getAddress(packInfo.tokenType));
-            uint ownerValue = _percentValue(balance, 98);
+            balance = _getBalance(getAddress(packInfo.tokenType));
+            calculatedAmount = percentValue(balance, 98);
+            feeAmount = balance - calculatedAmount;
 
-            _transfer(packInfo.tokenType, owner, ownerValue);
-            _transfer(packInfo.tokenType, msg.sender, balance - ownerValue);
+            _transfer(packInfo.tokenType, owner, calculatedAmount);
+            _transfer(packInfo.tokenType, msg.sender, feeAmount);
         }
 
         multiSign.count = 0;
@@ -206,38 +204,50 @@ contract SubscriptionCommander is Subscription, Commander {
             multiSign.confirmers[i] = address(0);
         }
 
-        emit LaunchCalculateEvent(msg.sender, address(this), owner, balance);
+        emit LaunchCalculateEvent(
+            msg.sender,
+            address(this),
+            owner,
+            balance,
+            calculatedAmount,
+            swappedAmount,
+            feeAmount
+        );
     }
 
-    function calculate() external haltInEmergency onCalculateTime {
-        require(msg.sender == owner, "you are not owner");
+    function calculate() external onlyOwner haltInEmergency onCalculateTime {
+        require(packInfo.times3 + 30 days >= block.timestamp, 'Only available within 30 days after times3');
 
         uint256 balance;
 
-        if (packInfo.tokenType == 100) {
+        if (packInfo.tokenType == ADR_NATIVE_TOKEN) {
             balance = address(this).balance;
         } else {
-            balance = getBalance(getAddress(packInfo.tokenType));
+            balance = _getBalance(getAddress(packInfo.tokenType));
         }
 
+        require(balance > 0, 'CT03 - Already calculated pack');
         _transfer(packInfo.tokenType, owner, balance);
 
         emit CalculateEvent(address(this), owner, balance);
     }
 
-    function changeTotal(uint32 count) external payable onlyOwner {
-        require(packInfo.total - quantity <= count, "TC01 - Less than the remaining quantity");
-        require(count <= 1000, "C05 - Limit count over");
+    function changeTotal(uint32 newQuantity) external payable onlyOwner {
+        require(packInfo.total - quantity <= newQuantity, 'TC01 - Less than the remaining quantity');
+        require(newQuantity <= MAX_SUBSCRIPTION_QTY, 'C05 - Wrong total count');
+        uint swappedAmouont;
 
-        if (count > packInfo.total) {
-            checkFee(count - packInfo.total);
-            _swap(msg.sender, msg.value);
+        if (newQuantity > packInfo.total) {
+            checkFee(newQuantity - packInfo.total);
+            swappedAmouont = _swap(ADR_PAC_TOKEN, msg.sender, msg.value);
+            quantity += newQuantity - packInfo.total;
+        } else {
+            quantity -= packInfo.total - newQuantity;
         }
 
-        quantity = quantity - (packInfo.total - count);
-        packInfo.total = count;
+        packInfo.total = newQuantity;
 
-        emit ChangeTotalEvent(address(this), packInfo.total, count);
+        emit ChangeTotalEvent(address(this), packInfo.total, newQuantity, msg.value, swappedAmouont);
     }
 
     function viewInfo() external view returns (PackInfo memory) {
@@ -256,59 +266,60 @@ contract SubscriptionCommander is Subscription, Commander {
         return buyList[userAddr];
     }
 
-    function viewVersion() external view returns (uint8) {
+    function viewVersion() external pure returns (uint8) {
         return ver;
     }
 
-    function _percentValue(uint value, uint8 percent) private view returns (uint) {
-        (bool success, bytes memory resultPercentValue) = getAddress(1300).staticcall(
-            abi.encodeWithSignature("getPercentValue(uint256,uint256)", value, percent)
-        );
+    function getTimePercent(uint256 totalTime, uint256 passedTime) private view returns (uint256) {
+        address target = getAddress(ADR_PERCENTAGE);
+        require(target != address(0), 'Percentage is not available');
 
-        require(success, "Getting a value of the percent is failed");
-
-        return abi.decode(resultPercentValue, (uint));
+        Percentage per = Percentage(target);
+        return per.getTimePercent(totalTime, passedTime);
     }
 
-    function _buy(address buyer) private {
-        buyList[buyer].hasCount++;
-        quantity--;
+    function percentValue(uint256 value, uint256 percent) private view returns (uint256) {
+        address target = getAddress(ADR_PERCENTAGE);
+        require(target != address(0), 'Percentage is not available');
+
+        Percentage per = Percentage(target);
+        return per.getPercentValue(value, percent);
     }
 
-    function _refund(
-        address _to,
-        uint value,
+    function refund(
+        address to,
+        uint256 amount,
         uint8 percent
     ) private returns (uint256, uint256) {
-        uint refundValue;
-        uint refundPercentValue;
-        uint swapValue;
-        uint feeValue;
+        uint256 refundAmount;
+        uint256 refundSwapAmount;
+        uint256 swappedAmount;
+        uint256 refundFeeAmount;
 
-        if (packInfo.tokenType == 100) {
-            refundValue = _percentValue(value, 100 - percent);
-            refundPercentValue = value - refundValue;
+        if (packInfo.tokenType == ADR_NATIVE_TOKEN) {
+            refundAmount = percentValue(amount, 100 - percent);
+            refundSwapAmount = amount - refundAmount;
+
+            if (refundSwapAmount != 0) {
+                swappedAmount = _swap(ADR_PAC_TOKEN, to, refundSwapAmount);
+            }
         } else {
             if (percent != 0) {
-                refundValue = _percentValue(value, 98);
-                feeValue = value - refundValue;
+                refundAmount = percentValue(amount, 98);
+                refundFeeAmount = amount - refundAmount;
+
+                if (refundFeeAmount != 0) {
+                    _transfer(packInfo.tokenType, getAddress(ADR_CREATOR), refundFeeAmount);
+                }
             } else {
-                refundValue = value;
+                refundAmount = amount;
             }
         }
 
-        if (refundValue != 0) {
-            _transfer(packInfo.tokenType, _to, refundValue);
+        if (refundAmount != 0) {
+            _transfer(packInfo.tokenType, to, refundAmount);
         }
 
-        if (refundPercentValue != 0) {
-            swapValue = _swap(_to, refundPercentValue);
-        }
-
-        if (feeValue != 0) {
-            _transfer(packInfo.tokenType, getAddress(0), feeValue);
-        }
-
-        return (refundValue, swapValue);
+        return (refundAmount, swappedAmount);
     }
 }

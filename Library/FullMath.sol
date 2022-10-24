@@ -38,15 +38,11 @@ contract FullMath {
                 xSignifier *= ySignifier;
 
                 if (xSignifier == 0)
-                    return
-                        (x ^ y) & 0x80000000000000000000000000000000 > 0
-                            ? NEGATIVE_ZERO
-                            : POSITIVE_ZERO;
+                    return (x ^ y) & 0x80000000000000000000000000000000 > 0 ? NEGATIVE_ZERO : POSITIVE_ZERO;
 
                 xExponent += yExponent;
 
-                uint256 msb = xSignifier >=
-                    0x200000000000000000000000000000000000000000000000000000000
+                uint256 msb = xSignifier >= 0x200000000000000000000000000000000000000000000000000000000
                     ? 225
                     : xSignifier >= 0x100000000000000000000000000000000000000000000000000000000
                     ? 224
@@ -72,11 +68,7 @@ contract FullMath {
 
                 return
                     bytes16(
-                        uint128(
-                            uint128((x ^ y) & 0x80000000000000000000000000000000) |
-                                (xExponent << 112) |
-                                xSignifier
-                        )
+                        uint128(uint128((x ^ y) & 0x80000000000000000000000000000000) | (xExponent << 112) | xSignifier)
                     );
             }
         }
@@ -106,7 +98,7 @@ contract FullMath {
 
                 if (xExponent == 0) {
                     if (xSignifier != 0) {
-                        uint shift = 226 - mostSignificantBit(xSignifier);
+                        uint256 shift = 226 - mostSignificantBit(xSignifier);
                         xSignifier <<= shift;
                         xExponent = 1;
                         yExponent += shift - 114;
@@ -118,10 +110,7 @@ contract FullMath {
                 xSignifier = xSignifier / ySignifier;
 
                 if (xSignifier == 0)
-                    return
-                        (x ^ y) & 0x80000000000000000000000000000000 > 0
-                            ? NEGATIVE_ZERO
-                            : POSITIVE_ZERO;
+                    return (x ^ y) & 0x80000000000000000000000000000000 > 0 ? NEGATIVE_ZERO : POSITIVE_ZERO;
 
                 assert(xSignifier >= 0x1000000000000000000000000000);
 
@@ -140,10 +129,8 @@ contract FullMath {
                     xExponent = 0;
                     xSignifier = 0;
                 } else if (xExponent + msb + 16268 < yExponent) {
-                    if (xExponent + 16380 > yExponent)
-                        xSignifier <<= xExponent + 16380 - yExponent;
-                    else if (xExponent + 16380 < yExponent)
-                        xSignifier >>= yExponent - xExponent - 16380;
+                    if (xExponent + 16380 > yExponent) xSignifier <<= xExponent + 16380 - yExponent;
+                    else if (xExponent + 16380 < yExponent) xSignifier >>= yExponent - xExponent - 16380;
 
                     xExponent = 0;
                 } else {
@@ -154,11 +141,7 @@ contract FullMath {
                 }
                 return
                     bytes16(
-                        uint128(
-                            uint128((x ^ y) & 0x80000000000000000000000000000000) |
-                                (xExponent << 112) |
-                                xSignifier
-                        )
+                        uint128(uint128((x ^ y) & 0x80000000000000000000000000000000) | (xExponent << 112) | xSignifier)
                     );
             }
         }
@@ -185,13 +168,12 @@ contract FullMath {
         unchecked {
             uint256 exponent = (uint128(x) >> 112) & 0x7FFF;
 
-            if (exponent < 16383) return 0; // Underflow
+            if (exponent < 16383) return 0;
 
-            require(uint128(x) < 0x80000000000000000000000000000000, "Negative Error"); // Negative
+            require(uint128(x) < 0x80000000000000000000000000000000, 'Negative Error');
 
-            require(exponent <= 16638, "Overflow Error"); // Overflow
-            uint256 result = (uint256(uint128(x)) & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFF) |
-                0x10000000000000000000000000000;
+            require(exponent <= 16638, 'Overflow Error');
+            uint256 result = (uint256(uint128(x)) & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFF) | 0x10000000000000000000000000000;
 
             if (exponent < 16495) result >>= 16495 - exponent;
             else if (exponent > 16495) result <<= exponent - 16495;
@@ -202,7 +184,7 @@ contract FullMath {
 
     function mostSignificantBit(uint256 x) private pure returns (uint256) {
         unchecked {
-            require(x > 0, "x variable should be bigger than zero");
+            require(x > 0, 'x variable should be bigger than zero');
 
             uint256 result;
 
@@ -234,7 +216,7 @@ contract FullMath {
                 x >>= 2;
                 result += 2;
             }
-            if (x >= 0x2) result += 1; // No need to shift x anymore
+            if (x >= 0x2) result += 1;
 
             return result;
         }
