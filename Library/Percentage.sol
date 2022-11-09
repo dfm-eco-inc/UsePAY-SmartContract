@@ -19,12 +19,18 @@ contract Percentage is FullMath {
     }
 
     function getPercentValue(uint256 amount, uint256 percent) external pure returns (uint256) {
+        require(0 <= percent && percent <= 100, 'Wrong percent value');
+
         if (percent == 100) return amount;
         if (percent == 0) return 0;
 
-        uint256 result = toUInt(mul(div(fromUInt(amount), fromUInt(100)), fromUInt(percent)));
+        uint256 result = toUInt(mul(div(fromUInt(amount * 10), fromUInt(100)), fromUInt(percent)));
+        uint256 restValue = result % 10;
 
-        if (amount % 100 > 0) result++;
-        return result;
+        if (restValue >= 5) {
+            return (result / 10) + 1;
+        } else {
+            return (result / 10);
+        }
     }
 }
