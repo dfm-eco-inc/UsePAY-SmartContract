@@ -46,6 +46,8 @@ contract Addresses {
 
     function startSetAddresses(uint16[] memory index, address[] memory newAddress) external onlyManager {
         require(multiSign.count == 0, 'Already in progress');
+        require(index.length == newAddress.length, 'The array length of the arguments is not matched');
+        require(index.length > 0, 'Empty argument');
 
         multiSign.confirmers[0] = msg.sender;
         multiSign.index = index;
