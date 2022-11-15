@@ -1,0 +1,9 @@
+.DS_Store
+artifacts/
+node_modules/
+yarn.lock
+memo.md
+Test/**
+.idea
+cache/
+localnet.addresses.txt

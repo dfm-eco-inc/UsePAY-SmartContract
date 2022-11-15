@@ -1,0 +1,11 @@
+{
+  "name": "calculation",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "dot-env": "^0.0.1",
+    "mysql": "^2.18.1",
+    "web3": "^1.7.4"
+  }
+}

@@ -1,0 +1,40 @@
+{
+    "name": "usepay-smartcontract-hardhat",
+    "private": true,
+    "version": "1.0.0",
+    "main": "index.js",
+    "repository": "https://github.com/dfm-eco-inc/UsePAY-SmartContract.git",
+    "author": "DFM eco Inc. <usepay@mail.dfmeco.io> (https://dfmeco.io)",
+    "license": "SEE LICENSE IN LICENSE.md",
+    "scripts": {
+        "lint": "solhint './contracts/*.sol'",
+        "prettier": "npx hardhat format && npx hardhat check",
+        "compile": "npx hardhat prepend-spdx-license && npx hardhat compile",
+        "localnet": "npx hardhat node",
+        "deploy": "./deploy/deploy.sh"
+    },
+    "devDependencies": {
+        "@nomiclabs/hardhat-ethers": "^2.1.0",
+        "@nomiclabs/hardhat-waffle": "^2.0.3",
+        "ethereum-waffle": "^3.4.4",
+        "ethers": "^5.6.9",
+        "hardhat": "^2.11.2",
+        "hardhat-abi-exporter": "^2.10.0",
+        "hardhat-gas-reporter": "^1.0.9",
+        "hardhat-spdx-license-identifier": "^2.0.3",
+        "prettier": "^2.7.1",
+        "prettier-plugin-solidity": "^1.0.0-beta.24",
+        "solhint": "^3.3.7",
+        "solhint-plugin-prettier": "^0.0.5"
+    },
+    "dependencies": {
+        "@openzeppelin/contracts": "^4.7.0",
+        "@uniswap/lib": "^4.0.1-alpha",
+        "@uniswap/v2-core": "^1.0.1",
+        "caver-js": "^1.8.2",
+        "hardhat-prettier": "^0.0.1",
+        "keccak256": "^1.0.6",
+        "moment": "^2.29.3",
+        "solc": "^0.8.15"
+    }
+}

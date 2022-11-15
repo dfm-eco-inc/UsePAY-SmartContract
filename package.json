@@ -1,0 +1,36 @@
+{
+    "name": "usepay-smartcontract-hardhat",
+    "version": "1.0.0",
+    "main": "index.js",
+    "repository": "http://192.168.33.210:30020/hyunbeomheo/usepay-contract-hardhat.git",
+    "author": "HyunBeom Heo <kenneth.cryptoinc@gmail.com>",
+    "license": "SEE LICENSE IN LICENSE.md",
+    "private": true,
+    "scripts": {
+        "lint": "cd Uniswap; yarn lint && cd ../UsePAY; yarn lint",
+        "prettier": "cd Uniswap; yarn prettier && cd ../UsePAY; yarn prettier",
+        "localnet": "cd UsePAY; rm localnet.addresses.txt; yarn localnet",
+        "console": "cd UsePAY; npx hardhat console --network",
+        "compile": "cd UsePAY; yarn compile; cd ../Uniswap; yarn compile",
+        "test": "cd UsePAY; yarn test",
+        "test:coupon": "cd UsePAY; yarn test --grep 쿠폰팩",
+        "test:ticket": "cd UsePAY; yarn test --grep 티켓팩",
+        "test:subscription": "cd UsePAY; yarn test --grep 구독팩",
+        "test:percentage": "cd UsePAY; yarn test --grep Percentage",
+        "clean": "cd Uniswap; npx hardhat clean && cd ../UsePAY; npx hardhat clean",
+        "deploy": "./deploy.sh",
+        "abi": "node ./utils/gen-abis.js",
+        "test:calculation": "node ./utils/test/calculation/main.js"
+    },
+    "dependencies": {
+        "archiver": "^5.3.1",
+        "axios": "^0.27.2",
+        "dotenv": "^16.0.3",
+        "mysql": "^2.18.1",
+        "web3": "^1.7.4"
+    },
+    "devDependencies": {
+        "alchemy-sdk": "^2.1.1",
+        "bignumber.js": "^9.1.0"
+    }
+}

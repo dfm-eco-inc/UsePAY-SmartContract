@@ -1,0 +1,10 @@
+{
+	"name": "팩 이름",
+	"description": "팩 설명",
+	"image": "이미지 주소",
+	"image_url": "이미지 주소",
+	"created_by": "팩 생성자",
+	"attributes":[ {
+		"trait_type":"속성 이름", "value":"속성 값"
+	}]
+}
