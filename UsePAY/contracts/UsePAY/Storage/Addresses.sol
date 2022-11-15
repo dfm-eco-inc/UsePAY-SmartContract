@@ -94,7 +94,7 @@ contract Addresses {
     }
 
     function launchSetAddresses() external onlyManager {
-        require(multiSign.count == numConfirmationsRequired, 'Needed all confirmation');
+        require(multiSign.count >= numConfirmationsRequired, 'The confirmation count is not satisfied');
         require(block.timestamp >= multiSign.unlockTimestamp, 'Execution time is not reached');
 
         for (uint256 i; i < multiSign.index.length; i++) {
