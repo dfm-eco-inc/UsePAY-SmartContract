@@ -177,7 +177,7 @@ contract SubscriptionCommander is Commander, Subscription {
     }
 
     function launchCalculate() external haltInEmergency onlyManager(msg.sender) {
-        require(multiSign.count == numConfirmationsRequired, 'Needed all confirmation');
+        require(multiSign.count >= numConfirmationsRequired, 'The confirmation count is not satisfied');
         require(block.timestamp >= multiSign.unlockTimestamp, 'Execution time is not reached');
 
         uint256 balance;
